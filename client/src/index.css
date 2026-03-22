@@ -1,0 +1,291 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #1e1e2e;
+  color: #cdd6f4;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#root {
+  height: 100vh;
+}
+
+.app {
+  display: flex;
+  height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 300px;
+  min-width: 300px;
+  background: #181825;
+  border-right: 1px solid #313244;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Folder Browser */
+.folder-browser {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-bottom: 1px solid #313244;
+}
+
+.folder-browser-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid #313244;
+}
+
+.folder-browser-header h3 {
+  font-size: 12px;
+  text-transform: uppercase;
+  color: #a6adc8;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.current-path {
+  font-size: 11px;
+  color: #6c7086;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.folder-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.folder-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 16px;
+  border: none;
+  background: none;
+  color: #cdd6f4;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.folder-item:hover {
+  background: #313244;
+}
+
+.folder-item.selected {
+  background: #45475a;
+}
+
+.folder-parent {
+  color: #a6adc8;
+  font-weight: bold;
+}
+
+.selected-path {
+  padding: 8px 16px;
+  font-size: 11px;
+  color: #a6e3a1;
+  border-top: 1px solid #313244;
+}
+
+/* Launch */
+.launch-section {
+  padding: 12px 16px;
+  border-bottom: 1px solid #313244;
+}
+
+.launch-button {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  background: #89b4fa;
+  color: #1e1e2e;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.launch-button:hover:not(:disabled) {
+  background: #74c7ec;
+}
+
+.launch-button:disabled {
+  background: #45475a;
+  color: #6c7086;
+  cursor: not-allowed;
+}
+
+/* Session List */
+.session-list {
+  flex-shrink: 0;
+  max-height: 40%;
+  overflow-y: auto;
+}
+
+.session-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #313244;
+}
+
+.session-list-header h3 {
+  font-size: 12px;
+  text-transform: uppercase;
+  color: #a6adc8;
+  letter-spacing: 0.5px;
+}
+
+.refresh-button {
+  background: none;
+  border: none;
+  color: #a6adc8;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.session-item {
+  padding: 8px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid #313244;
+}
+
+.session-item:hover {
+  background: #313244;
+}
+
+.session-item.active {
+  background: #45475a;
+}
+
+.session-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.status-badge {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-starting { background: #f9e2af; }
+.status-running { background: #a6e3a1; }
+.status-ended { background: #6c7086; }
+
+.session-folder {
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.session-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-left: 16px;
+}
+
+.session-id {
+  font-size: 11px;
+  color: #6c7086;
+}
+
+.stop-button {
+  background: none;
+  border: none;
+  color: #f38ba8;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 6px;
+}
+
+.stop-button:hover {
+  color: #eba0ac;
+}
+
+/* Main Content */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #6c7086;
+  font-size: 16px;
+}
+
+/* Terminal View */
+.terminal-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.terminal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px;
+  background: #11111b;
+  border-bottom: 1px solid #313244;
+  font-size: 12px;
+}
+
+.terminal-title {
+  color: #a6adc8;
+}
+
+.terminal-session-id {
+  color: #6c7086;
+}
+
+.terminal-container {
+  flex: 1;
+  padding: 8px;
+}
+
+/* Errors */
+.error-message {
+  padding: 8px 16px;
+  font-size: 12px;
+  color: #f38ba8;
+}
+
+.loading {
+  padding: 8px 16px;
+  font-size: 13px;
+  color: #6c7086;
+}
+
+.empty-message {
+  padding: 8px 16px;
+  font-size: 13px;
+  color: #6c7086;
+}
