@@ -29,8 +29,8 @@ export function useTerminal(sessionId: string) {
     termRef.current = term;
 
     const wsUrl = import.meta.env.DEV
-      ? `ws://localhost:3001/ws/sessions/${sessionId}`
-      : `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}/ws/sessions/${sessionId}`;
+      ? `ws://localhost:3001/stream/sessions/${sessionId}`
+      : `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}/stream/sessions/${sessionId}`;
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 

@@ -1,26 +1,34 @@
 import { WebSocketServer, WebSocket } from "ws";
 import type { Server } from "node:http";
 import * as sessionManager from "../services/session-manager.js";
-import { ALLOWED_ORIGIN } from "../config.js";
+import { ALLOWED_ORIGIN, PORT } from "../config.js";
 import type { WsMessage } from "../types.js";
+
+const ALLOWED_ORIGINS = new Set([
+  ALLOWED_ORIGIN,
+  `http://localhost:${PORT}`,
+]);
 
 export function handleWebSocketUpgrade(server: Server): void {
   const wss = new WebSocketServer({ noServer: true });
 
   server.on("upgrade", (request, socket, head) => {
     const origin = request.headers.origin;
-    if (origin && origin !== ALLOWED_ORIGIN) {
+    if (origin && !ALLOWED_ORIGINS.has(origin)) {
       socket.destroy();
       return;
     }
 
     const url = new URL(request.url ?? "", `http://${request.headers.host}`);
-    const match = url.pathname.match(/^\/ws\/sessions\/([^/]+)$/);
+    const match = url.pathname.match(/^\/stream\/sessions\/([^/]+)$/);
 
     if (!match) {
+      console.log(`[WS] REJECTED: path mismatch (${url.pathname})`);
       socket.destroy();
       return;
     }
+
+    console.log(`[WS] ACCEPTED: session=${match[1]}`);
 
     wss.handleUpgrade(request, socket, head, (ws) => {
       handleConnection(ws, match[1]);

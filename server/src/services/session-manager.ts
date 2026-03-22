@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
-import { stat } from "node:fs/promises";
+import { stat, writeFile } from "node:fs/promises";
 import path from "node:path";
+import type { ChildProcess } from "node:child_process";
 import type { Session, SessionStatus } from "../types.js";
 import {
   MaxSessionsError,
@@ -17,7 +18,8 @@ interface SessionEntry {
   session: Session;
   outputBuffer: string;
   listeners: Set<(data: string) => void>;
-  pollInterval: ReturnType<typeof setInterval> | null;
+  tailProcess: ChildProcess | null;
+  statusInterval: ReturnType<typeof setInterval> | null;
 }
 
 const sessions = new Map<string, SessionEntry>();
@@ -64,17 +66,26 @@ export async function createSession(folderPath: string): Promise<Session> {
     session,
     outputBuffer: "",
     listeners: new Set(),
-    pollInterval: null,
+    tailProcess: null,
+    statusInterval: null,
   };
 
   sessions.set(id, entry);
 
   try {
+    // Create empty log file first
+    const logFile = tmux.getPipeFilePath(tmuxSessionName);
+    await writeFile(logFile, "");
+
     await tmux.createSession(
       tmuxSessionName,
       resolvedPath,
       "claude --dangerously-skip-permissions",
     );
+
+    // Start pipe-pane to capture raw PTY output
+    await tmux.startPipePane(tmuxSessionName);
+
     // Auto-accept the workspace trust dialog after a short delay
     setTimeout(async () => {
       try {
@@ -83,8 +94,9 @@ export async function createSession(folderPath: string): Promise<Session> {
         // Session may have ended already
       }
     }, 2000);
+
     session.status = "running";
-    startOutputPolling(entry);
+    startOutputStream(entry);
   } catch (err) {
     session.status = "ended";
     session.endedAt = new Date().toISOString();
@@ -94,39 +106,35 @@ export async function createSession(folderPath: string): Promise<Session> {
   return session;
 }
 
-function startOutputPolling(entry: SessionEntry): void {
-  let lastOutput = "";
+function startOutputStream(entry: SessionEntry): void {
+  const logFile = tmux.getPipeFilePath(entry.session.tmuxSessionName);
 
-  entry.pollInterval = setInterval(async () => {
+  // Tail the log file to get raw PTY output
+  const child = tmux.tailFile(logFile, (data: Buffer) => {
+    const text = data.toString();
+    appendOutput(entry, text);
+    for (const listener of entry.listeners) {
+      listener(text);
+    }
+  });
+
+  entry.tailProcess = child;
+
+  child.on("exit", () => {
+    entry.tailProcess = null;
+  });
+
+  // Poll for session liveness
+  entry.statusInterval = setInterval(async () => {
     try {
       const alive = await tmux.hasSession(entry.session.tmuxSessionName);
       if (!alive) {
         updateStatus(entry, "ended");
-        return;
       }
-
-      const output = await tmux.capturePaneOutput(
-        entry.session.tmuxSessionName,
-      );
-      if (output !== lastOutput) {
-        const newContent = output.slice(lastOutput.length);
-        lastOutput = output;
-
-        if (newContent) {
-          appendOutput(entry, newContent);
-          for (const listener of entry.listeners) {
-            listener(newContent);
-          }
-        }
-      }
-    } catch (err) {
-      console.error(
-        `Polling error for session ${entry.session.id}:`,
-        err,
-      );
+    } catch {
       updateStatus(entry, "ended");
     }
-  }, 200);
+  }, 2000);
 }
 
 function appendOutput(entry: SessionEntry, data: string): void {
@@ -140,9 +148,13 @@ function updateStatus(entry: SessionEntry, status: SessionStatus): void {
   entry.session.status = status;
   if (status === "ended") {
     entry.session.endedAt = new Date().toISOString();
-    if (entry.pollInterval) {
-      clearInterval(entry.pollInterval);
-      entry.pollInterval = null;
+    if (entry.tailProcess) {
+      entry.tailProcess.kill();
+      entry.tailProcess = null;
+    }
+    if (entry.statusInterval) {
+      clearInterval(entry.statusInterval);
+      entry.statusInterval = null;
     }
   }
 }

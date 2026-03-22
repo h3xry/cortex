@@ -1,5 +1,8 @@
-import { execFile } from "node:child_process";
+import { execFile, spawn, type ChildProcess } from "node:child_process";
 import { promisify } from "node:util";
+import { mkdirSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 
 const execFileAsync = promisify(execFile);
 
@@ -79,6 +82,7 @@ export async function capturePaneOutput(
       "-t",
       sessionName,
       "-p",
+      "-e",
       "-S",
       String(startLine),
     ]);
@@ -86,4 +90,33 @@ export async function capturePaneOutput(
   } catch {
     return "";
   }
+}
+
+const PIPE_DIR = path.join(tmpdir(), "cc-monitor");
+mkdirSync(PIPE_DIR, { recursive: true });
+
+export function getPipeFilePath(sessionName: string): string {
+  return path.join(PIPE_DIR, `${sessionName}.log`);
+}
+
+export async function startPipePane(sessionName: string): Promise<void> {
+  validateSessionName(sessionName);
+  const filePath = getPipeFilePath(sessionName);
+  // pipe-pane sends raw PTY output to a file
+  await execFileAsync("tmux", [
+    "pipe-pane",
+    "-t",
+    sessionName,
+    "-o",
+    `cat >> ${filePath}`,
+  ]);
+}
+
+export function tailFile(
+  filePath: string,
+  onData: (data: Buffer) => void,
+): ChildProcess {
+  const child = spawn("tail", ["-f", "-c", "+0", filePath]);
+  child.stdout.on("data", onData);
+  return child;
 }
