@@ -3,10 +3,10 @@ import { ALLOWED_ORIGIN, PORT } from "../src/config.js";
 
 describe("config", () => {
   it("should have default ALLOWED_ORIGIN", () => {
-    expect(ALLOWED_ORIGIN).toBe("http://localhost:5174");
+    expect(ALLOWED_ORIGIN).toBe("http://localhost:9001");
   });
 
   it("should have default PORT", () => {
-    expect(PORT).toBe(3001);
+    expect(PORT).toBe(9002);
   });
 });

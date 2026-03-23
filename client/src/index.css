@@ -139,6 +139,24 @@ body {
   font-weight: bold;
 }
 
+.folder-picker-name {
+  flex: 1;
+}
+
+.folder-picker-badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: #a6e3a1;
+  color: #1e1e2e;
+  font-weight: 600;
+  margin-left: 4px;
+}
+
+.folder-picker-item.already-added {
+  opacity: 0.6;
+}
+
 .folder-picker-actions {
   display: flex;
   justify-content: flex-end;

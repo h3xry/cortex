@@ -3,9 +3,10 @@ import type { FolderEntry, FolderListResponse } from "../types";
 
 interface AddProjectProps {
   onAdd: (path: string) => Promise<void>;
+  existingPaths: Set<string>;
 }
 
-export function AddProject({ onAdd }: AddProjectProps) {
+export function AddProject({ onAdd, existingPaths }: AddProjectProps) {
   const [showBrowser, setShowBrowser] = useState(false);
   const [currentPath, setCurrentPath] = useState("");
   const [parentPath, setParentPath] = useState<string | null>(null);
@@ -82,6 +83,9 @@ export function AddProject({ onAdd }: AddProjectProps) {
 
         <div className="folder-picker-path" title={currentPath}>
           {currentPath}
+          {existingPaths.has(currentPath) && (
+            <span className="folder-picker-badge">Already in workspace</span>
+          )}
         </div>
 
         <div className="folder-picker-list">
@@ -97,20 +101,24 @@ export function AddProject({ onAdd }: AddProjectProps) {
           {loading && <div className="loading">Loading...</div>}
 
           {!loading &&
-            entries.map((entry) => (
-              <button
-                key={entry.path}
-                className="folder-picker-item"
-                onDoubleClick={() => fetchFolders(entry.path)}
-                onClick={() => {
-                  setCurrentPath(entry.path);
-                }}
-                title={entry.path}
-              >
-                <span>{entry.hasChildren ? "📂" : "📁"}</span>
-                <span>{entry.name}</span>
-              </button>
-            ))}
+            entries.map((entry) => {
+              const isAdded = existingPaths.has(entry.path);
+              return (
+                <button
+                  key={entry.path}
+                  className={`folder-picker-item ${isAdded ? "already-added" : ""}`}
+                  onDoubleClick={() => fetchFolders(entry.path)}
+                  onClick={() => {
+                    setCurrentPath(entry.path);
+                  }}
+                  title={entry.path}
+                >
+                  <span>{entry.hasChildren ? "📂" : "📁"}</span>
+                  <span className="folder-picker-name">{entry.name}</span>
+                  {isAdded && <span className="folder-picker-badge">Added</span>}
+                </button>
+              );
+            })}
 
           {!loading && entries.length === 0 && (
             <div className="empty-message">No folders</div>

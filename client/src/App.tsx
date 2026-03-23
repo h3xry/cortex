@@ -43,7 +43,10 @@ export function App() {
       )}
 
       <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
-        <AddProject onAdd={handleAddProject} />
+        <AddProject
+          onAdd={handleAddProject}
+          existingPaths={new Set(projects.map((p) => p.path))}
+        />
 
         <ProjectList
           projects={projects}
