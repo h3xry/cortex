@@ -39,6 +39,16 @@ export function ProjectPanel({ project }: ProjectPanelProps) {
   const projectSessions = sessions.filter(
     (s) => s.folderPath === project.path,
   );
+
+  // Auto-select latest running session on mount or when sessions change
+  useEffect(() => {
+    if (activeSession) return;
+    const running = projectSessions.filter((s) => s.status === "running");
+    if (running.length > 0) {
+      setActiveSession(running[running.length - 1]);
+    }
+  }, [sessions]);
+
   const currentStatus =
     activeSession && sessions.find((s) => s.id === activeSession.id)?.status;
   const sessionEnded = currentStatus === "ended";

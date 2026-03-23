@@ -72,8 +72,15 @@ export function useTerminal(sessionId: string) {
     const handleResize = () => fitAddon.fit();
     window.addEventListener("resize", handleResize);
 
+    // Also watch container size changes (tab switch, panel resize)
+    const resizeObserver = new ResizeObserver(() => {
+      fitAddon.fit();
+    });
+    resizeObserver.observe(terminalRef.current);
+
     return () => {
       window.removeEventListener("resize", handleResize);
+      resizeObserver.disconnect();
       ws.close();
       term.dispose();
     };
