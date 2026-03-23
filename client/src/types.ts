@@ -28,7 +28,8 @@ export type WsMessage =
 
 export type WsClientMessage =
   | { type: "input"; data: string }
-  | { type: "control"; key: string };
+  | { type: "control"; key: string }
+  | { type: "resize"; cols: number; rows: number };
 
 export interface ToolConfig {
   name: string;

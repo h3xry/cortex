@@ -106,6 +106,8 @@ function handleConnection(ws: WebSocket, sessionId: string): void {
         await tmux.sendKeys(session.tmuxSessionName, msg.data);
       } else if (msg.type === "control" && ALLOWED_CONTROL_KEYS.has(msg.key)) {
         await tmux.sendKeys(session.tmuxSessionName, msg.key);
+      } else if (msg.type === "resize" && msg.cols > 0 && msg.rows > 0) {
+        await tmux.resizeWindow(session.tmuxSessionName, msg.cols, msg.rows);
       }
     } catch (err) {
       console.error(`Send keys error for session ${sessionId}:`, err);

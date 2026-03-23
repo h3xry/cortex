@@ -31,6 +31,23 @@ export async function createSession(
   ]);
 }
 
+export async function resizeWindow(
+  sessionName: string,
+  cols: number,
+  rows: number,
+): Promise<void> {
+  validateSessionName(sessionName);
+  await execFileAsync("tmux", [
+    "resize-window",
+    "-t",
+    sessionName,
+    "-x",
+    String(cols),
+    "-y",
+    String(rows),
+  ]);
+}
+
 export async function sendKeys(
   sessionName: string,
   keys: string,

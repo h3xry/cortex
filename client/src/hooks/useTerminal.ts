@@ -36,6 +36,10 @@ export function useTerminal(sessionId: string) {
 
     ws.onopen = () => {
       console.log(`[WS] Connected to session ${sessionId}`);
+      // Sync tmux size with xterm on connect
+      fitAddon.fit();
+      const { cols, rows } = term;
+      ws.send(JSON.stringify({ type: "resize", cols, rows }));
     };
 
     ws.onerror = (event) => {
@@ -69,6 +73,13 @@ export function useTerminal(sessionId: string) {
       }
     };
 
+    // Send resize to tmux when terminal size changes
+    term.onResize(({ cols, rows }) => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: "resize", cols, rows }));
+      }
+    });
+
     const handleResize = () => fitAddon.fit();
     window.addEventListener("resize", handleResize);
 
@@ -77,6 +88,11 @@ export function useTerminal(sessionId: string) {
       fitAddon.fit();
     });
     resizeObserver.observe(terminalRef.current);
+
+    // Initial resize to sync tmux with xterm size
+    setTimeout(() => {
+      fitAddon.fit();
+    }, 100);
 
     return () => {
       window.removeEventListener("resize", handleResize);
