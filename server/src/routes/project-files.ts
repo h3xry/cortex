@@ -58,7 +58,6 @@ projectFilesRouter.get("/", async (req, res) => {
     const entries = [];
 
     for (const dirent of dirents) {
-      if (dirent.name.startsWith(".")) continue;
       if (dirent.name === "node_modules") continue;
 
       const entryRelPath = relPath ? `${relPath}/${dirent.name}` : dirent.name;
