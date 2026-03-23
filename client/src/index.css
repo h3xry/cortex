@@ -1151,19 +1151,26 @@ body {
 
 /* Mini Terminal in session cards */
 .mini-terminal {
+  position: relative;
   flex: 1;
-  min-height: 100px;
+  min-height: 120px;
   border-radius: 4px;
   overflow: hidden;
   background: #11111b;
 }
 
-.mini-terminal .xterm {
-  padding: 4px;
+.mini-terminal-inner {
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
 .mini-terminal .xterm-viewport {
   overflow: hidden !important;
+}
+
+.mini-terminal .xterm-screen {
+  pointer-events: none;
 }
 
 .mini-terminal-ended {

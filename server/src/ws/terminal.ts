@@ -29,15 +29,16 @@ export function handleWebSocketUpgrade(server: Server): void {
       return;
     }
 
-    console.log(`[WS] ACCEPTED: session=${match[1]}`);
+    const readonly = url.searchParams.get("readonly") === "1";
+    console.log(`[WS] ACCEPTED: session=${match[1]}${readonly ? " (readonly)" : ""}`);
 
     wss.handleUpgrade(request, socket, head, (ws) => {
-      handleConnection(ws, match[1]);
+      handleConnection(ws, match[1], readonly);
     });
   });
 }
 
-function handleConnection(ws: WebSocket, sessionId: string): void {
+function handleConnection(ws: WebSocket, sessionId: string, readonly = false): void {
   const session = sessionManager.getSession(sessionId);
 
   if (!session) {
@@ -80,13 +81,32 @@ function handleConnection(ws: WebSocket, sessionId: string): void {
     }
   }, 1000);
 
+  // Heartbeat: ping every 30s, terminate after 2 missed pongs
+  let missedPongs = 0;
+  const pingInterval = setInterval(() => {
+    if (missedPongs >= 2) {
+      console.log(`[WS] Dead connection detected for session ${sessionId}, terminating`);
+      ws.terminate();
+      return;
+    }
+    missedPongs++;
+    ws.ping();
+  }, 30_000);
+
+  ws.on("pong", () => {
+    missedPongs = 0;
+  });
+
   const cleanup = () => {
     removeListener();
     clearInterval(statusInterval);
+    clearInterval(pingInterval);
   };
 
-  // Handle client→server messages (input/control)
+  // Handle client→server messages (input/control/resize)
+  // Readonly connections only receive output — ignore all input
   ws.on("message", async (raw) => {
+    if (readonly) return;
     if (session.status === "ended") return;
 
     let msg: WsClientMessage;

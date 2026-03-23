@@ -14,12 +14,17 @@ import * as tmux from "./tmux.js";
 const MAX_SESSIONS = 10;
 const OUTPUT_BUFFER_SIZE = 100 * 1024; // 100KB
 
+const TAIL_MAX_RETRIES = 3;
+const TAIL_RETRY_WINDOW_MS = 30_000;
+
 interface SessionEntry {
   session: Session;
   outputBuffer: string;
   listeners: Set<(data: string) => void>;
   tailProcess: ChildProcess | null;
   statusInterval: ReturnType<typeof setInterval> | null;
+  tailRestartCount: number;
+  tailLastRestartAt: number;
 }
 
 const sessions = new Map<string, SessionEntry>();
@@ -72,6 +77,8 @@ export async function createSession(
     listeners: new Set(),
     tailProcess: null,
     statusInterval: null,
+    tailRestartCount: 0,
+    tailLastRestartAt: 0,
   };
 
   sessions.set(id, entry);
@@ -91,6 +98,9 @@ export async function createSession(
 
     // Start pipe-pane to capture raw PTY output
     await tmux.startPipePane(tmuxSessionName);
+
+    // Wait for pipe-pane to start writing before tailing
+    await waitForPipePane(logFile);
 
     // Auto-accept the workspace trust dialog after a short delay
     setTimeout(async () => {
@@ -112,6 +122,20 @@ export async function createSession(
   return session;
 }
 
+async function waitForPipePane(logFile: string, timeoutMs = 2000): Promise<void> {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    try {
+      const stats = await stat(logFile);
+      if (stats.size > 0) return;
+    } catch {
+      // File may not exist yet
+    }
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  // Timeout — proceed anyway, tail -f will pick up writes when they arrive
+}
+
 function startOutputStream(entry: SessionEntry): void {
   const logFile = tmux.getPipeFilePath(entry.session.tmuxSessionName);
 
@@ -120,14 +144,56 @@ function startOutputStream(entry: SessionEntry): void {
     const text = data.toString();
     appendOutput(entry, text);
     for (const listener of entry.listeners) {
-      listener(text);
+      try {
+        listener(text);
+      } catch (err) {
+        console.error(`[session ${entry.session.id}] listener error, removing:`, err);
+        entry.listeners.delete(listener);
+      }
     }
   });
 
   entry.tailProcess = child;
 
-  child.on("exit", () => {
+  child.on("exit", (code) => {
     entry.tailProcess = null;
+
+    // Session already ended — no restart needed
+    if (entry.session.status === "ended") return;
+
+    // Check if tmux session is still alive
+    tmux.hasSession(entry.session.tmuxSessionName).then((alive) => {
+      if (!alive) {
+        console.log(`[session ${entry.session.id}] tmux session gone, marking ended`);
+        updateStatus(entry, "ended");
+        return;
+      }
+
+      // Circuit breaker: reset counter if outside retry window
+      const now = Date.now();
+      if (now - entry.tailLastRestartAt > TAIL_RETRY_WINDOW_MS) {
+        entry.tailRestartCount = 0;
+      }
+
+      if (entry.tailRestartCount >= TAIL_MAX_RETRIES) {
+        console.error(`[session ${entry.session.id}] tail recovery failed after ${TAIL_MAX_RETRIES} retries`);
+        return;
+      }
+
+      // Exponential backoff: 1s, 2s, 4s
+      const delay = 1000 * Math.pow(2, entry.tailRestartCount);
+      entry.tailRestartCount++;
+      entry.tailLastRestartAt = now;
+
+      console.log(`[session ${entry.session.id}] tail exited (code=${code}), restarting in ${delay}ms (attempt ${entry.tailRestartCount}/${TAIL_MAX_RETRIES})`);
+
+      setTimeout(() => {
+        if (entry.session.status === "ended") return;
+        startOutputStream(entry);
+      }, delay);
+    }).catch(() => {
+      updateStatus(entry, "ended");
+    });
   });
 
   // Poll for session liveness

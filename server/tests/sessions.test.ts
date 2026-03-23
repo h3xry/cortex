@@ -18,6 +18,22 @@ vi.mock("../src/services/path-guard.js", () => ({
   getAllowedRoot: vi.fn().mockReturnValue("/home"),
 }));
 
+// Fake child process that captures event handlers for testing
+function createFakeTailProcess() {
+  const handlers = new Map<string, Function>();
+  return {
+    on: vi.fn((event: string, handler: Function) => {
+      handlers.set(event, handler);
+    }),
+    kill: vi.fn(),
+    stdout: { on: vi.fn() },
+    _handlers: handlers,
+    _triggerExit: (code: number | null) => handlers.get("exit")?.(code),
+  };
+}
+
+let latestTailProcess = createFakeTailProcess();
+
 vi.mock("../src/services/tmux.js", () => ({
   createSession: vi.fn().mockResolvedValue(undefined),
   killSession: vi.fn().mockResolvedValue(undefined),
@@ -26,7 +42,7 @@ vi.mock("../src/services/tmux.js", () => ({
   sendKeys: vi.fn().mockResolvedValue(undefined),
   getPipeFilePath: vi.fn().mockReturnValue("/tmp/test.log"),
   startPipePane: vi.fn().mockResolvedValue(undefined),
-  tailFile: vi.fn().mockReturnValue({ on: vi.fn(), kill: vi.fn() }),
+  tailFile: vi.fn().mockImplementation(() => latestTailProcess),
 }));
 
 vi.mock("node:fs/promises", async () => {
@@ -48,7 +64,7 @@ async function loadModule() {
 describe("session-manager", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockedStat.mockResolvedValue({ isDirectory: () => true } as any);
+    mockedStat.mockResolvedValue({ isDirectory: () => true, size: 1 } as any);
   });
 
   describe("createSession", () => {
@@ -163,5 +179,70 @@ describe("session-manager", () => {
       expect(typeof cleanup).toBe("function");
       cleanup();
     });
+  });
+
+  describe("tail restart on exit", () => {
+    beforeEach(() => {
+      latestTailProcess = createFakeTailProcess();
+    });
+
+    // Helper: flush microtasks (let promises resolve)
+    const flush = () => new Promise((r) => setTimeout(r, 50));
+
+    it("should restart tail when process exits and tmux session is alive", async () => {
+      const tmuxMock = await import("../src/services/tmux.js");
+      vi.mocked(tmuxMock.hasSession).mockResolvedValue(true);
+
+      const mgr = await loadModule();
+      await mgr.createSession("/tmp");
+
+      const exitHandler = latestTailProcess._handlers.get("exit");
+      expect(exitHandler).toBeDefined();
+
+      latestTailProcess = createFakeTailProcess();
+      exitHandler!(1);
+
+      // Wait for hasSession promise + 1s backoff + margin
+      await new Promise((r) => setTimeout(r, 1500));
+
+      expect(vi.mocked(tmuxMock.tailFile).mock.calls.length).toBeGreaterThanOrEqual(2);
+    }, 10000);
+
+    it("should mark session ended when tmux session is gone", async () => {
+      const tmuxMock = await import("../src/services/tmux.js");
+      vi.mocked(tmuxMock.hasSession).mockResolvedValue(true);
+
+      const mgr = await loadModule();
+      const session = await mgr.createSession("/tmp");
+
+      // Now mock hasSession to return false for the exit handler check
+      vi.mocked(tmuxMock.hasSession).mockResolvedValue(false);
+
+      const exitHandler = latestTailProcess._handlers.get("exit");
+      exitHandler!(1);
+
+      await flush();
+
+      expect(mgr.getSessionStatus(session.id)).toBe("ended");
+    }, 10000);
+
+    it("should not restart when session is already ended", async () => {
+      const tmuxMock = await import("../src/services/tmux.js");
+      vi.mocked(tmuxMock.hasSession).mockResolvedValue(true);
+
+      const mgr = await loadModule();
+      const session = await mgr.createSession("/tmp");
+
+      await mgr.deleteSession(session.id);
+
+      const callCountBefore = vi.mocked(tmuxMock.tailFile).mock.calls.length;
+
+      const exitHandler = latestTailProcess._handlers.get("exit");
+      if (exitHandler) exitHandler(0);
+
+      await flush();
+
+      expect(vi.mocked(tmuxMock.tailFile).mock.calls.length).toBe(callCountBefore);
+    }, 10000);
   });
 });

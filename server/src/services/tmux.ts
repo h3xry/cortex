@@ -135,5 +135,11 @@ export function tailFile(
 ): ChildProcess {
   const child = spawn("tail", ["-f", "-c", "+0", filePath]);
   child.stdout.on("data", onData);
+  child.stdout.on("error", (err) => {
+    console.error(`[tail] stdout error for ${filePath}:`, err.message);
+  });
+  child.on("error", (err) => {
+    console.error(`[tail] process error for ${filePath}:`, err.message);
+  });
   return child;
 }
