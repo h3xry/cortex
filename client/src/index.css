@@ -1563,13 +1563,39 @@ body {
     flex-wrap: wrap;
   }
 
-  /* Terminal input */
+  /* Terminal - input fixed at bottom on mobile */
+  .terminal-view {
+    position: relative;
+    height: 100%;
+  }
+
+  .terminal-container {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+
   .terminal-input {
-    flex-wrap: wrap;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    flex-shrink: 0;
+    flex-wrap: nowrap;
+    background: #11111b;
+    border-top: 1px solid #313244;
+    padding: 8px;
   }
 
   .terminal-input-field {
     min-width: 0;
+    font-size: 16px; /* prevent iOS zoom on focus */
+  }
+
+  /* Add bottom padding so terminal content doesn't hide behind fixed input */
+  .terminal-view {
+    padding-bottom: 56px;
   }
 
   /* Markdown content */
