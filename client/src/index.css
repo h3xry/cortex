@@ -284,6 +284,163 @@ body {
   color: #f38ba8;
 }
 
+.project-actions {
+  display: flex;
+  gap: 2px;
+}
+
+.privacy-button {
+  background: none;
+  border: none;
+  color: #6c7086;
+  cursor: pointer;
+  font-size: 10px;
+  padding: 2px 5px;
+  border-radius: 3px;
+}
+
+.privacy-button:hover {
+  color: #f9e2af;
+  background: #313244;
+}
+
+.private-badge {
+  font-size: 9px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: #f9e2af;
+  color: #1e1e2e;
+  font-weight: 700;
+  margin-right: 6px;
+}
+
+/* Sidebar Unlock */
+.sidebar-unlock {
+  padding: 8px 16px;
+  border-top: 1px solid #313244;
+}
+
+.unlock-button {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #f9e2af;
+  border-radius: 6px;
+  background: none;
+  color: #f9e2af;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.unlock-button:hover {
+  background: #f9e2af;
+  color: #1e1e2e;
+}
+
+.unlock-button.unlocked {
+  border-color: #a6e3a1;
+  color: #a6e3a1;
+}
+
+.unlock-button.unlocked:hover {
+  background: #a6e3a1;
+  color: #1e1e2e;
+}
+
+/* Modal */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.modal-content {
+  background: #181825;
+  border: 1px solid #313244;
+  border-radius: 12px;
+  padding: 20px;
+  width: 360px;
+  max-width: 90vw;
+}
+
+.modal-content h3 {
+  font-size: 15px;
+  margin-bottom: 8px;
+  color: #cdd6f4;
+}
+
+.modal-description {
+  font-size: 12px;
+  color: #6c7086;
+  margin-bottom: 12px;
+}
+
+.modal-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #313244;
+  border-radius: 6px;
+  background: #11111b;
+  color: #cdd6f4;
+  font-size: 14px;
+  outline: none;
+}
+
+.modal-input:focus {
+  border-color: #89b4fa;
+}
+
+.modal-error {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #f38ba8;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.modal-btn-cancel {
+  padding: 8px 16px;
+  border: 1px solid #313244;
+  border-radius: 6px;
+  background: none;
+  color: #6c7086;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.modal-btn-cancel:hover {
+  color: #cdd6f4;
+}
+
+.modal-btn-confirm {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background: #89b4fa;
+  color: #1e1e2e;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.modal-btn-confirm:hover {
+  background: #74c7ec;
+}
+
+.modal-btn-confirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* Project Panel */
 .project-panel {
   display: flex;

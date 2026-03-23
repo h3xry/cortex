@@ -50,6 +50,7 @@ export interface Project {
   path: string;
   isGitRepo: boolean;
   addedAt: string;
+  isPrivate: boolean;
 }
 
 export interface FileEntry {

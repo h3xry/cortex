@@ -7,6 +7,7 @@ import { toolsRouter } from "./routes/tools.js";
 import { projectsRouter } from "./routes/projects.js";
 import { projectGitRouter } from "./routes/project-git.js";
 import { projectFilesRouter } from "./routes/project-files.js";
+import { privateRouter } from "./routes/private.js";
 import { handleWebSocketUpgrade } from "./ws/terminal.js";
 import { ALLOWED_ORIGINS, PORT } from "./config.js";
 
@@ -22,6 +23,7 @@ app.use("/api/tools", toolsRouter);
 app.use("/api/projects", projectsRouter);
 app.use("/api/projects/:id/git", projectGitRouter);
 app.use("/api/projects/:id/files", projectFilesRouter);
+app.use("/api/private", privateRouter);
 
 handleWebSocketUpgrade(server);
 

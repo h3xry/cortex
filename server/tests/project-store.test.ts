@@ -96,6 +96,31 @@ describe("project-store", () => {
     });
   });
 
+  describe("setPrivate", () => {
+    it("should set project as private", async () => {
+      const store = await loadModule();
+      const added = await store.addProject("/tmp/myproject");
+      expect(added.isPrivate).toBe(false);
+      const updated = await store.setPrivate(added.id, true);
+      expect(updated.isPrivate).toBe(true);
+    });
+
+    it("should set project back to public", async () => {
+      const store = await loadModule();
+      const added = await store.addProject("/tmp/myproject");
+      await store.setPrivate(added.id, true);
+      const updated = await store.setPrivate(added.id, false);
+      expect(updated.isPrivate).toBe(false);
+    });
+
+    it("should throw for unknown project", async () => {
+      const store = await loadModule();
+      await expect(store.setPrivate("nonexistent", true)).rejects.toThrow(
+        "Project not found",
+      );
+    });
+  });
+
   describe("removeProject", () => {
     it("should remove a project", async () => {
       const store = await loadModule();
