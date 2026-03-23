@@ -231,19 +231,35 @@ export function ProjectPanel({ project }: ProjectPanelProps) {
               selectedFile={selectedGitFile}
               onSelectFile={(f) => {
                 setSelectedGitFile(f);
-                gitStatus.fetchDiff(f);
+                projectFiles.fetchFileContent(f);
+                const change = gitStatus.changes.find((c) => c.filePath === f);
+                if (change) {
+                  gitStatus.fetchDiff(f);
+                }
               }}
               onRefresh={gitStatus.fetchStatus}
             />
-            {gitStatus.selectedDiff && (
-              <DiffViewer
+            {projectFiles.fileContent && selectedGitFile ? (
+              <FileViewer
+                path={projectFiles.fileContent.path}
+                content={projectFiles.fileContent.content}
+                language={projectFiles.fileContent.language}
+                loading={projectFiles.contentLoading}
+                hasChanges={true}
                 diff={gitStatus.selectedDiff}
-                loading={gitStatus.diffLoading}
+                diffLoading={gitStatus.diffLoading}
                 onClose={() => {
                   setSelectedGitFile(null);
+                  projectFiles.clearFileContent();
                   gitStatus.clearDiff();
                 }}
               />
+            ) : (
+              <div className="file-viewer">
+                <div className="placeholder">
+                  Select a changed file to view
+                </div>
+              </div>
             )}
           </div>
         )}
