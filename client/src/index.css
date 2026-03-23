@@ -9,16 +9,19 @@ body {
   background: #1e1e2e;
   color: #cdd6f4;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
 }
 
 #root {
   height: 100vh;
+  height: 100dvh;
 }
 
 .app {
   display: flex;
   height: 100vh;
+  height: 100dvh;
 }
 
 /* Sidebar */
@@ -295,6 +298,10 @@ body {
   padding: 0 16px;
   background: #11111b;
   border-bottom: 1px solid #313244;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .panel-tabs {
@@ -791,6 +798,29 @@ body {
 }
 
 .terminal-ctrl-c-button:disabled {
+  border-color: #45475a;
+  color: #45475a;
+  cursor: not-allowed;
+}
+
+.terminal-enter-button {
+  padding: 8px 12px;
+  border: 1px solid #a6e3a1;
+  border-radius: 4px;
+  background: none;
+  color: #a6e3a1;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.terminal-enter-button:hover:not(:disabled) {
+  background: #a6e3a1;
+  color: #1e1e2e;
+}
+
+.terminal-enter-button:disabled {
   border-color: #45475a;
   color: #45475a;
   cursor: not-allowed;
@@ -1420,16 +1450,11 @@ body {
 /* Hamburger */
 .hamburger {
   display: none;
-  position: fixed;
-  top: 8px;
-  left: 8px;
-  z-index: 200;
   padding: 8px 12px;
-  border: 1px solid #313244;
-  border-radius: 6px;
-  background: #181825;
+  border: none;
+  background: none;
   color: #cdd6f4;
-  font-size: 20px;
+  font-size: 18px;
   cursor: pointer;
 }
 
@@ -1467,7 +1492,6 @@ body {
   .main-content {
     width: 100%;
     margin-left: 0;
-    padding-top: 44px;
   }
 
   /* Tabs scroll horizontally */
@@ -1572,14 +1596,18 @@ body {
   .terminal-container {
     flex: 1;
     min-height: 0;
-    overflow: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .terminal-container .xterm-viewport,
+  .terminal-container .xterm-screen {
+    touch-action: pan-y !important;
   }
 
   .terminal-input {
-    position: fixed;
+    position: sticky;
     bottom: 0;
-    left: 0;
-    right: 0;
     z-index: 50;
     flex-shrink: 0;
     flex-wrap: nowrap;
@@ -1591,11 +1619,6 @@ body {
   .terminal-input-field {
     min-width: 0;
     font-size: 16px; /* prevent iOS zoom on focus */
-  }
-
-  /* Add bottom padding so terminal content doesn't hide behind fixed input */
-  .terminal-view {
-    padding-bottom: 56px;
   }
 
   /* Markdown content */

@@ -93,6 +93,14 @@ export function TerminalInput({
         >
           Ctrl+C
         </button>
+        <button
+          className="terminal-enter-button"
+          onClick={() => onSendControl("Enter")}
+          disabled={disabled}
+          title="Send Enter"
+        >
+          Enter ⏎
+        </button>
       </div>
     </div>
   );

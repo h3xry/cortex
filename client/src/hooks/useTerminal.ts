@@ -28,6 +28,73 @@ export function useTerminal(sessionId: string) {
     fitAddon.fit();
     termRef.current = term;
 
+    // On mobile: touch scroll using xterm's scrollLines API
+    const isMobile = window.matchMedia("(max-width: 1024px)").matches;
+    let touchCleanup: (() => void) | null = null;
+    if (isMobile) {
+      let lastY = 0;
+      let lastTime = 0;
+      let velocity = 0;
+      let momentumId = 0;
+      const lineHeight = 18; // approximate px per terminal line
+
+      const onTouchStart = (e: TouchEvent) => {
+        e.stopPropagation();
+        e.preventDefault();
+        cancelAnimationFrame(momentumId);
+        lastY = e.touches[0].clientY;
+        lastTime = Date.now();
+        velocity = 0;
+      };
+
+      const onTouchMove = (e: TouchEvent) => {
+        e.stopPropagation();
+        e.preventDefault();
+        const y = e.touches[0].clientY;
+        const deltaY = lastY - y; // positive = scroll down
+        const now = Date.now();
+        const dt = now - lastTime;
+        if (dt > 0) {
+          velocity = deltaY / dt;
+        }
+        const lines = Math.round(deltaY / lineHeight);
+        if (lines !== 0) {
+          term.scrollLines(lines);
+          lastY = y;
+        }
+        lastTime = now;
+      };
+
+      const onTouchEnd = (e: TouchEvent) => {
+        e.stopPropagation();
+        e.preventDefault();
+        // Momentum scroll using velocity
+        const decel = 0.95;
+        const tick = () => {
+          velocity *= decel;
+          if (Math.abs(velocity) < 0.005) return;
+          const lines = Math.round(velocity * 16 / lineHeight);
+          if (lines !== 0) {
+            term.scrollLines(lines);
+          }
+          momentumId = requestAnimationFrame(tick);
+        };
+        momentumId = requestAnimationFrame(tick);
+      };
+
+      const container = terminalRef.current;
+      container.addEventListener("touchstart", onTouchStart, { capture: true });
+      container.addEventListener("touchmove", onTouchMove, { capture: true });
+      container.addEventListener("touchend", onTouchEnd, { capture: true });
+
+      touchCleanup = () => {
+        cancelAnimationFrame(momentumId);
+        container.removeEventListener("touchstart", onTouchStart, { capture: true });
+        container.removeEventListener("touchmove", onTouchMove, { capture: true });
+        container.removeEventListener("touchend", onTouchEnd, { capture: true });
+      };
+    }
+
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const wsUrl = `${protocol}//${window.location.host}/stream/sessions/${sessionId}`;
     const ws = new WebSocket(wsUrl);
@@ -94,6 +161,7 @@ export function useTerminal(sessionId: string) {
     }, 100);
 
     return () => {
+      touchCleanup?.();
       window.removeEventListener("resize", handleResize);
       resizeObserver.disconnect();
       ws.close();
