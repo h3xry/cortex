@@ -5,17 +5,20 @@ import { GitChanges } from "./GitChanges";
 import { DiffViewer } from "./DiffViewer";
 import { ProjectFiles } from "./ProjectFiles";
 import { FileViewer } from "./FileViewer";
+import { SpecBrowser } from "./SpecBrowser";
+import { MarkdownViewer } from "./MarkdownViewer";
 import { useSessions } from "../hooks/useSessions";
 import { useTools } from "../hooks/useTools";
 import { useGitStatus } from "../hooks/useGitStatus";
 import { useProjectFiles } from "../hooks/useProjectFiles";
+import { useSpecs } from "../hooks/useSpecs";
 import type { Project, Session } from "../types";
 
 interface ProjectPanelProps {
   project: Project;
 }
 
-type Tab = "terminal" | "files" | "changes";
+type Tab = "terminal" | "files" | "changes" | "specs";
 
 export function ProjectPanel({ project }: ProjectPanelProps) {
   const [activeTab, setActiveTab] = useState<Tab>("terminal");
@@ -28,6 +31,7 @@ export function ProjectPanel({ project }: ProjectPanelProps) {
   const toolsState = useTools();
   const gitStatus = useGitStatus(project.id);
   const projectFiles = useProjectFiles(project.id);
+  const specs = useSpecs(project.id);
 
   // Fetch git status when switching to files or changes tab
   useEffect(() => {
@@ -109,6 +113,12 @@ export function ProjectPanel({ project }: ProjectPanelProps) {
             onClick={() => { setActiveTab("changes"); setShowToolSelector(false); }}
           >
             Changes
+          </button>
+          <button
+            className={`panel-tab ${activeTab === "specs" ? "active" : ""}`}
+            onClick={() => { setActiveTab("specs"); setShowToolSelector(false); specs.fetchFeatures(); }}
+          >
+            Specs
           </button>
         </div>
         <div className="panel-actions">
@@ -234,6 +244,34 @@ export function ProjectPanel({ project }: ProjectPanelProps) {
                   gitStatus.clearDiff();
                 }}
               />
+            )}
+          </div>
+        )}
+
+        {!showToolSelector && activeTab === "specs" && (
+          <div className="specs-tab">
+            <SpecBrowser
+              features={specs.features}
+              featureFiles={specs.featureFiles}
+              selectedFeature={specs.selectedFeature}
+              selectedFile={specs.selectedFile}
+              loading={specs.loading}
+              hasSpecs={specs.hasSpecs}
+              onSelectFeature={specs.selectFeature}
+              onSelectFile={specs.selectFile}
+              onRefresh={specs.fetchFeatures}
+            />
+            {specs.content ? (
+              <MarkdownViewer
+                content={specs.content.content}
+                filePath={specs.content.path}
+              />
+            ) : (
+              <div className="markdown-viewer">
+                <div className="placeholder">
+                  Select a spec file to view
+                </div>
+              </div>
             )}
           </div>
         )}

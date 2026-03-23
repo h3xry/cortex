@@ -10,7 +10,12 @@ export function useSessions() {
       const res = await fetch("/api/sessions");
       if (res.ok) {
         const data = await res.json();
-        setSessions(data.sessions);
+        // Only update state if data actually changed (prevent unnecessary re-renders)
+        setSessions((prev) => {
+          const next = data.sessions;
+          if (JSON.stringify(prev) === JSON.stringify(next)) return prev;
+          return next;
+        });
         setError(null);
       }
     } catch (err) {

@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { Highlight, themes } from "prism-react-renderer";
 import { DiffViewer } from "./DiffViewer";
+import { MarkdownViewer } from "./MarkdownViewer";
 import type { GitDiff } from "../types";
 
 interface FileViewerProps {
@@ -23,6 +25,15 @@ export function FileViewer({
   diffLoading,
   onClose,
 }: FileViewerProps) {
+  const isMarkdown = filePath.endsWith(".md");
+  const [viewMode, setViewMode] = useState<"render" | "code" | "diff">(
+    hasChanges && diff && diff.hunks.length > 0
+      ? "diff"
+      : isMarkdown
+        ? "render"
+        : "code",
+  );
+
   if (loading) {
     return (
       <div className="file-viewer">
@@ -31,41 +42,68 @@ export function FileViewer({
     );
   }
 
-  // If file has changes and diff has hunks, show diff view
-  // If diff is empty (new/untracked file), fall through to show code
-  if (hasChanges && diff && diff.hunks.length > 0) {
-    return (
-      <div className="file-viewer">
-        <DiffViewer diff={diff} loading={diffLoading} onClose={onClose} />
-      </div>
-    );
-  }
+  // Auto-select diff if file has changes with hunks
+  const hasDiff = hasChanges && diff && diff.hunks.length > 0;
 
-  // Otherwise show file content with syntax highlighting
   return (
     <div className="file-viewer">
       <div className="file-viewer-header">
         <span className="file-viewer-path">{filePath}</span>
-        <button className="file-viewer-close" onClick={onClose}>
-          x
-        </button>
-      </div>
-      <div className="file-viewer-content">
-        <Highlight theme={themes.vsDark} code={content} language={language}>
-          {({ style, tokens, getLineProps, getTokenProps }) => (
-            <pre style={{ ...style, margin: 0, padding: "12px" }}>
-              {tokens.map((line, i) => (
-                <div key={i} {...getLineProps({ line })}>
-                  <span className="line-number">{i + 1}</span>
-                  {line.map((token, key) => (
-                    <span key={key} {...getTokenProps({ token })} />
-                  ))}
-                </div>
-              ))}
-            </pre>
+        <div className="file-viewer-actions">
+          {isMarkdown && (
+            <button
+              className={`file-viewer-mode-button ${viewMode === "render" ? "active" : ""}`}
+              onClick={() => setViewMode("render")}
+            >
+              Preview
+            </button>
           )}
-        </Highlight>
+          <button
+            className={`file-viewer-mode-button ${viewMode === "code" ? "active" : ""}`}
+            onClick={() => setViewMode("code")}
+          >
+            Code
+          </button>
+          {hasDiff && (
+            <button
+              className={`file-viewer-mode-button ${viewMode === "diff" ? "active" : ""}`}
+              onClick={() => setViewMode("diff")}
+            >
+              Diff
+            </button>
+          )}
+          <button className="file-viewer-close" onClick={onClose}>
+            x
+          </button>
+        </div>
       </div>
+
+      {viewMode === "diff" && hasDiff ? (
+        <DiffViewer
+          diff={diff!}
+          loading={diffLoading}
+          onClose={() => setViewMode(isMarkdown ? "render" : "code")}
+        />
+      ) : viewMode === "render" && isMarkdown ? (
+        <MarkdownViewer content={content} filePath={filePath} showHeader={false} />
+      ) : (
+        <div className="file-viewer-content">
+          <Highlight theme={themes.vsDark} code={content} language={language}>
+            {({ style, tokens, getLineProps, getTokenProps }) => (
+              <pre style={{ ...style, margin: 0, padding: "12px" }}>
+                {tokens.map((line, i) => (
+                  <div key={i} {...getLineProps({ line })}>
+                    <span className="line-number">{i + 1}</span>
+                    {line.map((token, key) => (
+                      <span key={key} {...getTokenProps({ token })} />
+                    ))}
+                  </div>
+                ))}
+              </pre>
+            )}
+          </Highlight>
+        </div>
+      )}
     </div>
   );
 }
