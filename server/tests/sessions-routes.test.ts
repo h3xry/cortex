@@ -60,7 +60,7 @@ describe("POST /api/sessions", () => {
       .send({});
 
     expect(res.status).toBe(400);
-    expect(res.body.error).toBe("folderPath is required");
+    expect(res.body.error).toBe("folderPath or projectId is required");
   });
 
   it("should return 400 on InvalidPathError", async () => {

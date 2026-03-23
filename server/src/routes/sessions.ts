@@ -1,5 +1,6 @@
 import { Router } from "express";
 import * as sessionManager from "../services/session-manager.js";
+import * as projectStore from "../services/project-store.js";
 import {
   MaxSessionsError,
   InvalidPathError,
@@ -9,16 +10,29 @@ import {
 export const sessionsRouter = Router();
 
 sessionsRouter.post("/", async (req, res) => {
-  const { folderPath, allowedTools } = req.body;
-  if (!folderPath || typeof folderPath !== "string") {
-    res.status(400).json({ error: "folderPath is required" });
+  const { folderPath, projectId, allowedTools } = req.body;
+
+  let resolvedPath: string | undefined = folderPath;
+
+  // Resolve path from projectId if provided
+  if (projectId && typeof projectId === "string") {
+    const project = await projectStore.getProject(projectId);
+    if (!project) {
+      res.status(400).json({ error: "Project not found" });
+      return;
+    }
+    resolvedPath = project.path;
+  }
+
+  if (!resolvedPath || typeof resolvedPath !== "string") {
+    res.status(400).json({ error: "folderPath or projectId is required" });
     return;
   }
 
   const tools: string[] = Array.isArray(allowedTools) ? allowedTools : [];
 
   try {
-    const session = await sessionManager.createSession(folderPath, tools);
+    const session = await sessionManager.createSession(resolvedPath, tools);
     res.status(201).json({
       id: session.id,
       folderPath: session.folderPath,

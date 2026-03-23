@@ -40,3 +40,47 @@ export interface ToolPreset {
   name: string;
   tools: string[];
 }
+
+// Project Manager types
+
+export interface Project {
+  id: string;
+  name: string;
+  path: string;
+  isGitRepo: boolean;
+  addedAt: string;
+}
+
+export interface FileEntry {
+  name: string;
+  path: string;
+  type: "file" | "directory";
+  size: number | null;
+}
+
+export type GitChangeStatus = "modified" | "added" | "deleted" | "renamed";
+
+export interface GitChange {
+  filePath: string;
+  status: GitChangeStatus;
+  additions: number;
+  deletions: number;
+}
+
+export interface DiffLine {
+  type: "add" | "delete" | "context";
+  content: string;
+  oldLineNumber: number | null;
+  newLineNumber: number | null;
+}
+
+export interface DiffHunk {
+  oldStart: number;
+  newStart: number;
+  lines: DiffLine[];
+}
+
+export interface GitDiff {
+  filePath: string;
+  hunks: DiffHunk[];
+}
