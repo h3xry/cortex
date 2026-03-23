@@ -26,6 +26,7 @@ export function ProjectPanel({ project }: ProjectPanelProps) {
   const [showToolSelector, setShowToolSelector] = useState(false);
   const [launching, setLaunching] = useState(false);
   const [selectedGitFile, setSelectedGitFile] = useState<string | null>(null);
+  const [mobileShowContent, setMobileShowContent] = useState(false);
 
   const { sessions, createSession } = useSessions();
   const toolsState = useTools();
@@ -95,13 +96,13 @@ export function ProjectPanel({ project }: ProjectPanelProps) {
         <div className="panel-tabs">
           <button
             className={`panel-tab ${activeTab === "terminal" ? "active" : ""}`}
-            onClick={() => { setActiveTab("terminal"); setShowToolSelector(false); }}
+            onClick={() => { setActiveTab("terminal"); setShowToolSelector(false); setMobileShowContent(false); }}
           >
             Terminal
           </button>
           <button
             className={`panel-tab ${activeTab === "files" ? "active" : ""}`}
-            onClick={() => { setActiveTab("files"); setShowToolSelector(false); }}
+            onClick={() => { setActiveTab("files"); setShowToolSelector(false); setMobileShowContent(false); }}
           >
             Files
             {gitStatus.changes.length > 0 && (
@@ -110,7 +111,7 @@ export function ProjectPanel({ project }: ProjectPanelProps) {
           </button>
           <button
             className={`panel-tab ${activeTab === "changes" ? "active" : ""}`}
-            onClick={() => { setActiveTab("changes"); setShowToolSelector(false); }}
+            onClick={() => { setActiveTab("changes"); setShowToolSelector(false); setMobileShowContent(false); }}
           >
             Changes
           </button>
@@ -175,7 +176,7 @@ export function ProjectPanel({ project }: ProjectPanelProps) {
         )}
 
         {!showToolSelector && activeTab === "files" && (
-          <div className="files-tab">
+          <div className={`files-tab ${mobileShowContent ? "mobile-show-content" : ""}`}>
             <ProjectFiles
               projectId={project.id}
               entries={projectFiles.entries}
@@ -185,13 +186,13 @@ export function ProjectPanel({ project }: ProjectPanelProps) {
               onNavigate={projectFiles.fetchEntries}
               onOpenFile={(path) => {
                 projectFiles.fetchFileContent(path);
-                // Auto-fetch diff if file has git changes
                 const change = gitStatus.changes.find((c) => c.filePath === path);
                 if (change) {
                   gitStatus.fetchDiff(path);
                 } else {
                   gitStatus.clearDiff();
                 }
+                setMobileShowContent(true);
               }}
             />
             {projectFiles.fileContent ? (
@@ -203,12 +204,10 @@ export function ProjectPanel({ project }: ProjectPanelProps) {
                 hasChanges={!!viewedFileChange}
                 diff={gitStatus.selectedDiff}
                 diffLoading={gitStatus.diffLoading}
-                onRequestDiff={() =>
-                  gitStatus.fetchDiff(projectFiles.fileContent!.path)
-                }
                 onClose={() => {
                   projectFiles.clearFileContent();
                   gitStatus.clearDiff();
+                  setMobileShowContent(false);
                 }}
               />
             ) : (
@@ -222,7 +221,7 @@ export function ProjectPanel({ project }: ProjectPanelProps) {
         )}
 
         {!showToolSelector && activeTab === "changes" && (
-          <div className="changes-tab">
+          <div className={`changes-tab ${mobileShowContent ? "mobile-show-content" : ""}`}>
             <GitChanges
               changes={gitStatus.changes}
               branch={gitStatus.branch}
@@ -236,6 +235,7 @@ export function ProjectPanel({ project }: ProjectPanelProps) {
                 if (change) {
                   gitStatus.fetchDiff(f);
                 }
+                setMobileShowContent(true);
               }}
               onRefresh={gitStatus.fetchStatus}
             />
@@ -252,6 +252,7 @@ export function ProjectPanel({ project }: ProjectPanelProps) {
                   setSelectedGitFile(null);
                   projectFiles.clearFileContent();
                   gitStatus.clearDiff();
+                  setMobileShowContent(false);
                 }}
               />
             ) : (
@@ -265,7 +266,7 @@ export function ProjectPanel({ project }: ProjectPanelProps) {
         )}
 
         {!showToolSelector && activeTab === "specs" && (
-          <div className="specs-tab">
+          <div className={`specs-tab ${mobileShowContent ? "mobile-show-content" : ""}`}>
             <SpecBrowser
               features={specs.features}
               featureFiles={specs.featureFiles}
@@ -274,7 +275,10 @@ export function ProjectPanel({ project }: ProjectPanelProps) {
               loading={specs.loading}
               hasSpecs={specs.hasSpecs}
               onSelectFeature={specs.selectFeature}
-              onSelectFile={specs.selectFile}
+              onSelectFile={(path) => {
+                specs.selectFile(path);
+                setMobileShowContent(true);
+              }}
               onRefresh={specs.fetchFeatures}
             />
             {specs.content ? (

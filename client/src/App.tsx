@@ -8,10 +8,17 @@ import type { Project } from "./types";
 export function App() {
   const { projects, addProject, removeProject } = useProjects();
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleAddProject = async (path: string) => {
     const project = await addProject(path);
     setSelectedProject(project);
+    setSidebarOpen(false);
+  };
+
+  const handleSelectProject = (project: Project) => {
+    setSelectedProject(project);
+    setSidebarOpen(false);
   };
 
   const handleRemoveProject = async (id: string) => {
@@ -23,13 +30,25 @@ export function App() {
 
   return (
     <div className="app">
-      <aside className="sidebar">
+      <button
+        className="hamburger"
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        aria-label="Toggle sidebar"
+      >
+        ☰
+      </button>
+
+      {sidebarOpen && (
+        <div className="sidebar-backdrop" onClick={() => setSidebarOpen(false)} />
+      )}
+
+      <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
         <AddProject onAdd={handleAddProject} />
 
         <ProjectList
           projects={projects}
           selectedProjectId={selectedProject?.id ?? null}
-          onSelect={setSelectedProject}
+          onSelect={handleSelectProject}
           onRemove={handleRemoveProject}
         />
       </aside>
