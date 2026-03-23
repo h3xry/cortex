@@ -8,6 +8,11 @@ export default defineConfig({
     allowedHosts: ["wfa.h3xry.dev"],
     proxy: {
       "/api": "http://localhost:9002",
+      "/stream": {
+        target: "http://localhost:9002",
+        ws: true,
+        changeOrigin: true,
+      },
     },
   },
 });
