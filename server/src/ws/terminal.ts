@@ -1,12 +1,12 @@
 import { WebSocketServer, WebSocket } from "ws";
 import type { Server } from "node:http";
 import * as sessionManager from "../services/session-manager.js";
-import { ALLOWED_ORIGIN, PORT } from "../config.js";
+import { ALLOWED_ORIGINS, PORT } from "../config.js";
 import type { WsMessage, WsClientMessage } from "../types.js";
 import * as tmux from "../services/tmux.js";
 
-const ALLOWED_ORIGINS = new Set([
-  ALLOWED_ORIGIN,
+const WS_ALLOWED_ORIGINS = new Set([
+  ...ALLOWED_ORIGINS,
   `http://localhost:${PORT}`,
 ]);
 
@@ -15,7 +15,7 @@ export function handleWebSocketUpgrade(server: Server): void {
 
   server.on("upgrade", (request, socket, head) => {
     const origin = request.headers.origin;
-    if (origin && !ALLOWED_ORIGINS.has(origin)) {
+    if (origin && !WS_ALLOWED_ORIGINS.has(origin)) {
       socket.destroy();
       return;
     }

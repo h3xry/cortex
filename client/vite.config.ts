@@ -5,6 +5,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 9001,
+    allowedHosts: ["wfa.h3xry.dev"],
     proxy: {
       "/api": "http://localhost:9002",
     },

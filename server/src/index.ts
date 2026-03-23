@@ -8,12 +8,12 @@ import { projectsRouter } from "./routes/projects.js";
 import { projectGitRouter } from "./routes/project-git.js";
 import { projectFilesRouter } from "./routes/project-files.js";
 import { handleWebSocketUpgrade } from "./ws/terminal.js";
-import { ALLOWED_ORIGIN, PORT } from "./config.js";
+import { ALLOWED_ORIGINS, PORT } from "./config.js";
 
 const app = express();
 const server = createServer(app);
 
-app.use(cors({ origin: ALLOWED_ORIGIN }));
+app.use(cors({ origin: ALLOWED_ORIGINS }));
 app.use(express.json({ limit: "16kb" }));
 
 app.use("/api/folders", foldersRouter);
