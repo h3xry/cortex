@@ -21,11 +21,17 @@ export function useSessions() {
   }, []);
 
   const createSession = useCallback(
-    async (folderPath: string): Promise<Session> => {
+    async (
+      folderPath: string,
+      allowedTools?: string[],
+    ): Promise<Session> => {
+      const body: Record<string, unknown> = { folderPath };
+      if (allowedTools) body.allowedTools = allowedTools;
+
       const res = await fetch("/api/sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ folderPath }),
+        body: JSON.stringify(body),
       });
       if (!res.ok) {
         const text = await res.text();

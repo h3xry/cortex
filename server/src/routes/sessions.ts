@@ -9,14 +9,16 @@ import {
 export const sessionsRouter = Router();
 
 sessionsRouter.post("/", async (req, res) => {
-  const { folderPath } = req.body;
+  const { folderPath, allowedTools } = req.body;
   if (!folderPath || typeof folderPath !== "string") {
     res.status(400).json({ error: "folderPath is required" });
     return;
   }
 
+  const tools: string[] = Array.isArray(allowedTools) ? allowedTools : [];
+
   try {
-    const session = await sessionManager.createSession(folderPath);
+    const session = await sessionManager.createSession(folderPath, tools);
     res.status(201).json({
       id: session.id,
       folderPath: session.folderPath,

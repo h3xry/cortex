@@ -1,10 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { stat } from "node:fs/promises";
 
-vi.mock("node:fs/promises", () => ({
-  stat: vi.fn(),
-}));
-
 vi.mock("node:path", async () => {
   const actual =
     await vi.importActual<typeof import("node:path")>("node:path");
@@ -27,7 +23,20 @@ vi.mock("../src/services/tmux.js", () => ({
   killSession: vi.fn().mockResolvedValue(undefined),
   hasSession: vi.fn().mockResolvedValue(true),
   capturePaneOutput: vi.fn().mockResolvedValue(""),
+  sendKeys: vi.fn().mockResolvedValue(undefined),
+  getPipeFilePath: vi.fn().mockReturnValue("/tmp/test.log"),
+  startPipePane: vi.fn().mockResolvedValue(undefined),
+  tailFile: vi.fn().mockReturnValue({ on: vi.fn(), kill: vi.fn() }),
 }));
+
+vi.mock("node:fs/promises", async () => {
+  const actual = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
+  return {
+    ...actual,
+    stat: vi.fn(),
+    writeFile: vi.fn().mockResolvedValue(undefined),
+  };
+});
 
 const mockedStat = vi.mocked(stat);
 

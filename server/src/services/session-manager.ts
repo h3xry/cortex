@@ -41,7 +41,10 @@ export async function validateFolderPath(folderPath: string): Promise<string> {
   return resolved;
 }
 
-export async function createSession(folderPath: string): Promise<Session> {
+export async function createSession(
+  folderPath: string,
+  allowedTools: string[] = [],
+): Promise<Session> {
   const activeSessions = Array.from(sessions.values()).filter(
     (e) => e.session.status !== "ended",
   );
@@ -58,6 +61,7 @@ export async function createSession(folderPath: string): Promise<Session> {
     tmuxSessionName,
     folderPath: resolvedPath,
     status: "starting",
+    allowedTools,
     createdAt: new Date().toISOString(),
     endedAt: null,
   };
@@ -77,11 +81,13 @@ export async function createSession(folderPath: string): Promise<Session> {
     const logFile = tmux.getPipeFilePath(tmuxSessionName);
     await writeFile(logFile, "");
 
-    await tmux.createSession(
-      tmuxSessionName,
-      resolvedPath,
-      "claude --dangerously-skip-permissions",
-    );
+    let command = "claude --dangerously-skip-permissions";
+    if (allowedTools.length > 0) {
+      const toolsArg = allowedTools.join(",");
+      command += ` --allowedTools "${toolsArg}"`;
+    }
+
+    await tmux.createSession(tmuxSessionName, resolvedPath, command);
 
     // Start pipe-pane to capture raw PTY output
     await tmux.startPipePane(tmuxSessionName);

@@ -1,7 +1,7 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
-import type { WsMessage } from "../types";
+import type { WsMessage, WsClientMessage } from "../types";
 
 export function useTerminal(sessionId: string) {
   const terminalRef = useRef<HTMLDivElement | null>(null);
@@ -79,5 +79,25 @@ export function useTerminal(sessionId: string) {
     };
   }, [sessionId]);
 
-  return { terminalRef };
+  const sendMessage = useCallback((msg: WsClientMessage) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify(msg));
+    }
+  }, []);
+
+  const sendInput = useCallback(
+    (text: string) => {
+      sendMessage({ type: "input", data: text });
+    },
+    [sendMessage],
+  );
+
+  const sendControl = useCallback(
+    (key: string) => {
+      sendMessage({ type: "control", key });
+    },
+    [sendMessage],
+  );
+
+  return { terminalRef, sendInput, sendControl };
 }

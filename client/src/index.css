@@ -241,6 +241,98 @@ body {
   font-size: 16px;
 }
 
+/* Tool Selector */
+.tool-selector {
+  padding: 24px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.tool-selector h3 {
+  font-size: 18px;
+  margin-bottom: 16px;
+  color: #cdd6f4;
+}
+
+.tool-presets {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.preset-button {
+  padding: 6px 14px;
+  border: 1px solid #313244;
+  border-radius: 16px;
+  background: none;
+  color: #a6adc8;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.preset-button:hover {
+  border-color: #89b4fa;
+  color: #89b4fa;
+}
+
+.preset-button.active {
+  background: #89b4fa;
+  color: #1e1e2e;
+  border-color: #89b4fa;
+  font-weight: 600;
+}
+
+.tool-categories {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.tool-category {
+  padding: 12px;
+  background: #181825;
+  border-radius: 8px;
+  border: 1px solid #313244;
+}
+
+.category-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #a6adc8;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.tool-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tool-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #cdd6f4;
+}
+
+.tool-item:hover {
+  background: #313244;
+}
+
+.tool-item input[type="checkbox"] {
+  accent-color: #89b4fa;
+}
+
+.tool-name {
+  white-space: nowrap;
+}
+
 /* Terminal View */
 .terminal-view {
   display: flex;
@@ -269,6 +361,86 @@ body {
 .terminal-container {
   flex: 1;
   padding: 8px;
+  overflow: hidden;
+}
+
+/* Terminal Input */
+.terminal-input {
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: #11111b;
+  border-top: 1px solid #313244;
+}
+
+.terminal-input-field {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #313244;
+  border-radius: 4px;
+  background: #1e1e2e;
+  color: #cdd6f4;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 13px;
+  outline: none;
+}
+
+.terminal-input-field:focus {
+  border-color: #89b4fa;
+}
+
+.terminal-input-field:disabled {
+  background: #181825;
+  color: #6c7086;
+  cursor: not-allowed;
+}
+
+.terminal-input-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.terminal-key-button {
+  padding: 8px 10px;
+  border: 1px solid #313244;
+  border-radius: 4px;
+  background: none;
+  color: #a6adc8;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.terminal-key-button:hover:not(:disabled) {
+  background: #313244;
+  color: #cdd6f4;
+}
+
+.terminal-key-button:disabled {
+  color: #45475a;
+  cursor: not-allowed;
+}
+
+.terminal-ctrl-c-button {
+  padding: 8px 12px;
+  border: 1px solid #f38ba8;
+  border-radius: 4px;
+  background: none;
+  color: #f38ba8;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.terminal-ctrl-c-button:hover:not(:disabled) {
+  background: #f38ba8;
+  color: #1e1e2e;
+}
+
+.terminal-ctrl-c-button:disabled {
+  border-color: #45475a;
+  color: #45475a;
+  cursor: not-allowed;
 }
 
 /* Errors */

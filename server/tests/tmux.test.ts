@@ -47,6 +47,8 @@ describe("tmux service", () => {
           "cc-test1",
           "-c",
           "/Users/test/project",
+          "sh",
+          "-c",
           "claude",
         ],
         expect.any(Function),
@@ -123,7 +125,7 @@ describe("tmux service", () => {
 
       expect(mockedExecFile).toHaveBeenCalledWith(
         "tmux",
-        ["capture-pane", "-t", "cc-test1", "-p", "-S", "-500"],
+        ["capture-pane", "-t", "cc-test1", "-p", "-e", "-S", "-500"],
         expect.any(Function),
       );
     });
@@ -135,7 +137,7 @@ describe("tmux service", () => {
 
       expect(mockedExecFile).toHaveBeenCalledWith(
         "tmux",
-        ["capture-pane", "-t", "cc-test1", "-p", "-S", "-100"],
+        ["capture-pane", "-t", "cc-test1", "-p", "-e", "-S", "-100"],
         expect.any(Function),
       );
     });

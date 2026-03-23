@@ -2,7 +2,8 @@ import { WebSocketServer, WebSocket } from "ws";
 import type { Server } from "node:http";
 import * as sessionManager from "../services/session-manager.js";
 import { ALLOWED_ORIGIN, PORT } from "../config.js";
-import type { WsMessage } from "../types.js";
+import type { WsMessage, WsClientMessage } from "../types.js";
+import * as tmux from "../services/tmux.js";
 
 const ALLOWED_ORIGINS = new Set([
   ALLOWED_ORIGIN,
@@ -83,6 +84,33 @@ function handleConnection(ws: WebSocket, sessionId: string): void {
     removeListener();
     clearInterval(statusInterval);
   };
+
+  // Handle client→server messages (input/control)
+  ws.on("message", async (raw) => {
+    if (session.status === "ended") return;
+
+    let msg: WsClientMessage;
+    try {
+      msg = JSON.parse(raw.toString());
+    } catch {
+      return;
+    }
+
+    const ALLOWED_CONTROL_KEYS = new Set([
+      "C-c", "Enter", "Up", "Down", "Left", "Right",
+      "Tab", "BTab", "Escape", "BSpace",
+    ]);
+
+    try {
+      if (msg.type === "input") {
+        await tmux.sendKeys(session.tmuxSessionName, msg.data);
+      } else if (msg.type === "control" && ALLOWED_CONTROL_KEYS.has(msg.key)) {
+        await tmux.sendKeys(session.tmuxSessionName, msg.key);
+      }
+    } catch (err) {
+      console.error(`Send keys error for session ${sessionId}:`, err);
+    }
+  });
 
   ws.on("close", cleanup);
 

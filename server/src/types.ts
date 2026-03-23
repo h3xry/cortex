@@ -5,6 +5,7 @@ export interface Session {
   tmuxSessionName: string;
   folderPath: string;
   status: SessionStatus;
+  allowedTools: string[];
   createdAt: string;
   endedAt: string | null;
 }
@@ -21,7 +22,24 @@ export interface FolderListResponse {
   entries: FolderEntry[];
 }
 
-export type WsMessage =
+export type WsServerMessage =
   | { type: "output"; data: string }
   | { type: "status"; status: SessionStatus }
   | { type: "error"; message: string };
+
+export type WsClientMessage =
+  | { type: "input"; data: string }
+  | { type: "control"; key: string };
+
+export type WsMessage = WsServerMessage;
+
+export interface ToolConfig {
+  name: string;
+  displayName: string;
+  category: "file" | "system" | "web" | "agent";
+}
+
+export interface ToolPreset {
+  name: string;
+  tools: string[];
+}
