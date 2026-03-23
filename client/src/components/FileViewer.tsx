@@ -31,8 +31,9 @@ export function FileViewer({
     );
   }
 
-  // If file has changes and diff is loaded, show diff view
-  if (hasChanges && diff) {
+  // If file has changes and diff has hunks, show diff view
+  // If diff is empty (new/untracked file), fall through to show code
+  if (hasChanges && diff && diff.hunks.length > 0) {
     return (
       <div className="file-viewer">
         <DiffViewer diff={diff} loading={diffLoading} onClose={onClose} />
