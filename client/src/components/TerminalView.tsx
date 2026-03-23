@@ -13,7 +13,8 @@ export function TerminalView({
   folderPath,
   sessionEnded,
 }: TerminalViewProps) {
-  const { terminalRef, sendInput, sendControl } = useTerminal(sessionId);
+  const { terminalRef, sendInput, sendControl, isUserScrolling, scrollToBottom } =
+    useTerminal(sessionId);
 
   return (
     <div className="terminal-view">
@@ -22,6 +23,14 @@ export function TerminalView({
         <span className="terminal-session-id">ID: {sessionId}</span>
       </div>
       <div className="terminal-container" ref={terminalRef} />
+      {isUserScrolling && (
+        <button
+          className="terminal-scroll-bottom"
+          onClick={scrollToBottom}
+        >
+          ↓ Latest
+        </button>
+      )}
       <TerminalInput
         onSendInput={sendInput}
         onSendControl={sendControl}

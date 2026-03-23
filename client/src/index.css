@@ -698,6 +698,7 @@ body {
   display: flex;
   flex-direction: column;
   height: 100%;
+  position: relative;
 }
 
 .terminal-header {
@@ -722,6 +723,30 @@ body {
   flex: 1;
   padding: 8px;
   overflow: hidden;
+}
+
+/* Scroll to bottom button */
+.terminal-scroll-bottom {
+  position: absolute;
+  bottom: 120px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  padding: 8px 20px;
+  border: 1px solid #89b4fa;
+  border-radius: 16px;
+  background: #1e1e2e;
+  color: #89b4fa;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  opacity: 0.9;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.terminal-scroll-bottom:hover {
+  background: #89b4fa;
+  color: #1e1e2e;
 }
 
 /* Terminal Input */

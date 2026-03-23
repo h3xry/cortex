@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import type { WsMessage, WsClientMessage } from "../types";
@@ -7,6 +7,8 @@ export function useTerminal(sessionId: string) {
   const terminalRef = useRef<HTMLDivElement | null>(null);
   const termRef = useRef<Terminal | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
+  const userScrollingRef = useRef(false);
+  const [isUserScrolling, setIsUserScrolling] = useState(false);
 
   useEffect(() => {
     if (!terminalRef.current) return;
@@ -27,6 +29,21 @@ export function useTerminal(sessionId: string) {
     term.open(terminalRef.current);
     fitAddon.fit();
     termRef.current = term;
+
+    // Track if user has scrolled away from bottom
+    const checkIfAtBottom = () => {
+      const viewport = terminalRef.current?.querySelector(".xterm-viewport") as HTMLElement | null;
+      if (!viewport) return true;
+      const atBottom = viewport.scrollTop + viewport.clientHeight >= viewport.scrollHeight - 10;
+      userScrollingRef.current = !atBottom;
+      setIsUserScrolling(!atBottom);
+      return atBottom;
+    };
+
+    // Watch viewport scroll to detect user scrolling
+    const viewport = terminalRef.current.querySelector(".xterm-viewport") as HTMLElement | null;
+    const onViewportScroll = () => checkIfAtBottom();
+    viewport?.addEventListener("scroll", onViewportScroll, { passive: true });
 
     // On mobile: touch scroll using xterm's scrollLines API
     const isMobile = window.matchMedia("(max-width: 1024px)").matches;
@@ -124,17 +141,29 @@ export function useTerminal(sessionId: string) {
       } catch {
         return;
       }
+      // Write data, then restore scroll position if user is scrolling
+      const writeWithoutAutoScroll = (data: string) => {
+        if (userScrollingRef.current && viewport) {
+          const savedScroll = viewport.scrollTop;
+          term.write(data, () => {
+            viewport.scrollTop = savedScroll;
+          });
+        } else {
+          term.write(data);
+        }
+      };
+
       switch (msg.type) {
         case "output":
-          term.write(msg.data);
+          writeWithoutAutoScroll(msg.data);
           break;
         case "status":
           if (msg.status === "ended") {
-            term.write("\r\n\x1b[90m--- Session ended ---\x1b[0m\r\n");
+            writeWithoutAutoScroll("\r\n\x1b[90m--- Session ended ---\x1b[0m\r\n");
           }
           break;
         case "error":
-          term.write(`\r\n\x1b[31mError: ${msg.message}\x1b[0m\r\n`);
+          writeWithoutAutoScroll(`\r\n\x1b[31mError: ${msg.message}\x1b[0m\r\n`);
           break;
       }
     };
@@ -162,6 +191,7 @@ export function useTerminal(sessionId: string) {
 
     return () => {
       touchCleanup?.();
+      viewport?.removeEventListener("scroll", onViewportScroll);
       window.removeEventListener("resize", handleResize);
       resizeObserver.disconnect();
       ws.close();
@@ -189,5 +219,11 @@ export function useTerminal(sessionId: string) {
     [sendMessage],
   );
 
-  return { terminalRef, sendInput, sendControl };
+  const scrollToBottom = useCallback(() => {
+    termRef.current?.scrollToBottom();
+    userScrollingRef.current = false;
+    setIsUserScrolling(false);
+  }, []);
+
+  return { terminalRef, sendInput, sendControl, isUserScrolling, scrollToBottom };
 }
