@@ -31,6 +31,8 @@ export function useTerminal(sessionId: string) {
     termRef.current = term;
 
     // Track if user has scrolled away from bottom
+    let writingData = false; // flag to ignore scroll events caused by term.write
+
     const checkIfAtBottom = () => {
       const viewport = terminalRef.current?.querySelector(".xterm-viewport") as HTMLElement | null;
       if (!viewport) return true;
@@ -42,7 +44,10 @@ export function useTerminal(sessionId: string) {
 
     // Watch viewport scroll to detect user scrolling
     const viewport = terminalRef.current.querySelector(".xterm-viewport") as HTMLElement | null;
-    const onViewportScroll = () => checkIfAtBottom();
+    const onViewportScroll = () => {
+      if (writingData) return; // ignore scroll events from term.write
+      checkIfAtBottom();
+    };
     viewport?.addEventListener("scroll", onViewportScroll, { passive: true });
 
     // On mobile: touch scroll using xterm's scrollLines API
@@ -143,13 +148,17 @@ export function useTerminal(sessionId: string) {
       }
       // Write data, then restore scroll position if user is scrolling
       const writeWithoutAutoScroll = (data: string) => {
+        writingData = true;
         if (userScrollingRef.current && viewport) {
           const savedScroll = viewport.scrollTop;
           term.write(data, () => {
             viewport.scrollTop = savedScroll;
+            writingData = false;
           });
         } else {
-          term.write(data);
+          term.write(data, () => {
+            writingData = false;
+          });
         }
       };
 
