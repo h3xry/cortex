@@ -188,6 +188,34 @@ export function getOutputBuffer(id: string): string {
   return sessions.get(id)?.outputBuffer ?? "";
 }
 
+// Strip ANSI escape codes from text
+function stripAnsi(text: string): string {
+  return text.replace(/\x1b\[[0-9;]*[a-zA-Z]|\x1b\][^\x07]*\x07|\x1b[()][^\n]|\x1b\[[\?]?[0-9;]*[hlm]/g, "");
+}
+
+export function getLastOutput(id: string): string {
+  const buffer = sessions.get(id)?.outputBuffer ?? "";
+  if (!buffer) return "";
+  const stripped = stripAnsi(buffer);
+  const lines = stripped.split("\n").filter((l) => l.trim().length > 0);
+  const last = lines[lines.length - 1] ?? "";
+  return last.trim().slice(0, 200);
+}
+
+export function removeSession(id: string): void {
+  const entry = sessions.get(id);
+  if (!entry) {
+    throw new SessionNotFoundError(id);
+  }
+  if (entry.tailProcess) {
+    entry.tailProcess.kill();
+  }
+  if (entry.statusInterval) {
+    clearInterval(entry.statusInterval);
+  }
+  sessions.delete(id);
+}
+
 export function addOutputListener(
   id: string,
   listener: (data: string) => void,

@@ -16,11 +16,14 @@ import type { Project, Session } from "../types";
 
 interface ProjectPanelProps {
   project: Project;
+  onToggleSidebar: () => void;
+  targetSessionId?: string | null;
+  onSessionActivated?: () => void;
 }
 
 type Tab = "terminal" | "files" | "changes" | "specs";
 
-export function ProjectPanel({ project }: ProjectPanelProps) {
+export function ProjectPanel({ project, onToggleSidebar, targetSessionId, onSessionActivated }: ProjectPanelProps) {
   const [activeTab, setActiveTab] = useState<Tab>("terminal");
   const [activeSession, setActiveSession] = useState<Session | null>(null);
   const [showToolSelector, setShowToolSelector] = useState(false);
@@ -53,6 +56,18 @@ export function ProjectPanel({ project }: ProjectPanelProps) {
       setActiveSession(running[running.length - 1]);
     }
   }, [sessions]);
+
+  // Switch to target session when requested from Session Manager
+  useEffect(() => {
+    if (!targetSessionId) return;
+    const target = projectSessions.find((s) => s.id === targetSessionId);
+    if (target) {
+      setActiveSession(target);
+      setActiveTab("terminal");
+      setShowToolSelector(false);
+      onSessionActivated?.();
+    }
+  }, [targetSessionId]);
 
   const currentStatus =
     activeSession && sessions.find((s) => s.id === activeSession.id)?.status;
@@ -94,6 +109,7 @@ export function ProjectPanel({ project }: ProjectPanelProps) {
     <div className="project-panel">
       <div className="panel-header">
         <div className="panel-tabs">
+          <button className="hamburger" onClick={onToggleSidebar}>☰</button>
           <button
             className={`panel-tab ${activeTab === "terminal" ? "active" : ""}`}
             onClick={() => { setActiveTab("terminal"); setShowToolSelector(false); setMobileShowContent(false); }}

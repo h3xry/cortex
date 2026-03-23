@@ -7,6 +7,8 @@ export interface Session {
   allowedTools: string[];
   createdAt: string;
   endedAt: string | null;
+  projectName: string | null;
+  lastOutput: string;
 }
 
 export interface FolderEntry {
