@@ -5,10 +5,8 @@ import { ProjectPanel } from "./components/ProjectPanel";
 import { SessionManager } from "./components/SessionManager";
 import { SetPrivateModal } from "./components/SetPrivateModal";
 import { UnlockModal } from "./components/UnlockModal";
-import { PlanBoard } from "./components/PlanBoard";
 import { useProjects } from "./hooks/useProjects";
 import { useSessions } from "./hooks/useSessions";
-import { usePlan } from "./hooks/usePlan";
 import type { Project, Session } from "./types";
 
 export function App() {
@@ -25,9 +23,8 @@ export function App() {
   } = useProjects();
   const { sessions, deleteSession } = useSessions();
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const planState = usePlan(selectedProject?.id ?? null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [mainView, setMainView] = useState<"project" | "sessions" | "plan">("project");
+  const [mainView, setMainView] = useState<"project" | "sessions">("project");
   const [privateTarget, setPrivateTarget] = useState<Project | null>(null);
   const [removePrivateTarget, setRemovePrivateTarget] = useState<Project | null>(null);
   const [showUnlock, setShowUnlock] = useState(false);
@@ -125,12 +122,6 @@ export function App() {
               <span className="sidebar-toggle-badge">{runningCount}</span>
             )}
           </button>
-          <button
-            className={`sidebar-toggle-btn ${mainView === "plan" ? "active" : ""}`}
-            onClick={() => setMainView("plan")}
-          >
-            Plan
-          </button>
         </div>
 
         <AddProject
@@ -172,19 +163,7 @@ export function App() {
       </aside>
 
       <main className="main-content">
-        {mainView === "plan" ? (
-          <div className="plan-main-view">
-            <div className="sm-main-topbar">
-              <button className="hamburger" onClick={() => setSidebarOpen(!sidebarOpen)}>☰</button>
-              <span className="topbar-title">{selectedProject ? selectedProject.name : "Select a project"}</span>
-            </div>
-            {selectedProject ? (
-              <PlanBoard projectId={selectedProject.id} planState={planState} />
-            ) : (
-              <div className="placeholder">Select a project to view its plan.</div>
-            )}
-          </div>
-        ) : mainView === "sessions" ? (
+        {mainView === "sessions" ? (
           <div className="sm-main-view">
             <div className="sm-main-topbar">
               <button
