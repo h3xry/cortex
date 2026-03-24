@@ -1,33 +1,23 @@
 import { readFile, writeFile, mkdir, readdir, unlink } from "node:fs/promises";
 import path from "node:path";
-import os from "node:os";
 import { randomUUID } from "node:crypto";
 import type { Note, NoteMeta } from "../types.js";
 
-const NOTES_DIR = path.join(os.homedir(), ".cc-monitor", "notes");
+const NOTES_FOLDER = ".cc-monitor/notes";
 const ID_RE = /^[a-zA-Z0-9]{1,64}$/;
 const FRONTMATTER_RE = /^---\n([\s\S]*?)\n---\n?([\s\S]*)$/;
 
-function validateId(id: string, label: string): void {
-  if (!ID_RE.test(id)) throw new Error(`Invalid ${label}`);
+function notesDir(projectPath: string): string {
+  return path.join(projectPath, NOTES_FOLDER);
 }
 
-function notesDir(projectId: string): string {
-  validateId(projectId, "project ID");
-  const dir = path.resolve(path.join(NOTES_DIR, projectId));
-  if (!dir.startsWith(path.resolve(NOTES_DIR) + path.sep)) {
-    throw new Error("Invalid project ID");
-  }
-  return dir;
+function noteFile(projectPath: string, noteId: string): string {
+  if (!ID_RE.test(noteId)) throw new Error("Invalid note ID");
+  return path.join(notesDir(projectPath), `${noteId}.md`);
 }
 
-function noteFile(projectId: string, noteId: string): string {
-  validateId(noteId, "note ID");
-  return path.join(notesDir(projectId), `${noteId}.md`);
-}
-
-async function ensureDir(projectId: string): Promise<void> {
-  await mkdir(notesDir(projectId), { recursive: true });
+async function ensureDir(projectPath: string): Promise<void> {
+  await mkdir(notesDir(projectPath), { recursive: true });
 }
 
 // --- Frontmatter parser/serializer ---
@@ -122,8 +112,8 @@ function sortNotes<T extends { pinned: boolean; updatedAt: string }>(notes: T[])
 
 // --- Public API ---
 
-export async function listNotes(projectId: string): Promise<NoteMeta[]> {
-  const dir = notesDir(projectId);
+export async function listNotes(projectPath: string): Promise<NoteMeta[]> {
+  const dir = notesDir(projectPath);
   let files: string[];
   try {
     files = await readdir(dir);
@@ -148,9 +138,9 @@ export async function listNotes(projectId: string): Promise<NoteMeta[]> {
   return sortNotes(notes);
 }
 
-export async function getNote(projectId: string, noteId: string): Promise<Note | null> {
+export async function getNote(projectPath: string, noteId: string): Promise<Note | null> {
   try {
-    const content = await readFile(noteFile(projectId, noteId), "utf-8");
+    const content = await readFile(noteFile(projectPath, noteId), "utf-8");
     const parsed = parseNoteFile(content);
     return { id: noteId, ...parsed };
   } catch (err) {
@@ -160,10 +150,10 @@ export async function getNote(projectId: string, noteId: string): Promise<Note |
 }
 
 export async function createNote(
-  projectId: string,
+  projectPath: string,
   data: { title?: string; content?: string; tags?: string[] },
 ): Promise<Note> {
-  await ensureDir(projectId);
+  await ensureDir(projectPath);
   const now = new Date().toISOString();
   const note: Note = {
     id: randomUUID().slice(0, 8),
@@ -174,16 +164,16 @@ export async function createNote(
     createdAt: now,
     updatedAt: now,
   };
-  await writeFile(noteFile(projectId, note.id), serializeFrontmatter(note));
+  await writeFile(noteFile(projectPath, note.id), serializeFrontmatter(note));
   return note;
 }
 
 export async function updateNote(
-  projectId: string,
+  projectPath: string,
   noteId: string,
   data: Partial<Pick<Note, "title" | "content" | "tags" | "pinned">>,
 ): Promise<Note | null> {
-  const note = await getNote(projectId, noteId);
+  const note = await getNote(projectPath, noteId);
   if (!note) return null;
 
   if (data.title !== undefined) note.title = data.title.trim() || "Untitled";
@@ -192,13 +182,13 @@ export async function updateNote(
   if (data.pinned !== undefined) note.pinned = data.pinned;
   note.updatedAt = new Date().toISOString();
 
-  await writeFile(noteFile(projectId, noteId), serializeFrontmatter(note));
+  await writeFile(noteFile(projectPath, noteId), serializeFrontmatter(note));
   return note;
 }
 
-export async function deleteNote(projectId: string, noteId: string): Promise<boolean> {
+export async function deleteNote(projectPath: string, noteId: string): Promise<boolean> {
   try {
-    await unlink(noteFile(projectId, noteId));
+    await unlink(noteFile(projectPath, noteId));
     return true;
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code === "ENOENT") return false;

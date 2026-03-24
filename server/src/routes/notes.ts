@@ -2,6 +2,7 @@ import { Router } from "express";
 import * as projectStore from "../services/project-store.js";
 import * as noteStore from "../services/note-store.js";
 import { isUnlockedHeader } from "../services/unlock-store.js";
+import type { Project } from "../types.js";
 
 export const noteRouter = Router({ mergeParams: true });
 
@@ -13,26 +14,25 @@ async function resolveProject(
   id: string,
   req: import("express").Request,
   res: import("express").Response,
-): Promise<boolean> {
+): Promise<Project | null> {
   const project = await projectStore.getProject(id);
   if (!project) {
     res.status(404).json({ error: "Project not found" });
-    return false;
+    return null;
   }
-  // Enforce private project unlock
   if (project.isPrivate && !isUnlockedHeader(req.headers)) {
     res.status(403).json({ error: "Project is private" });
-    return false;
+    return null;
   }
-  return true;
+  return project;
 }
 
 // GET /api/projects/:id/notes
 noteRouter.get("/", async (req, res) => {
   try {
-    const pid = (req.params as Params).id;
-    if (!(await resolveProject(pid, req, res))) return;
-    const notes = await noteStore.listNotes(pid);
+    const project = await resolveProject((req.params as Params).id, req, res);
+    if (!project) return;
+    const notes = await noteStore.listNotes(project.path);
     res.json({ notes });
   } catch (err) {
     console.error("Note list error:", err);
@@ -43,10 +43,9 @@ noteRouter.get("/", async (req, res) => {
 // GET /api/projects/:id/notes/:noteId
 noteRouter.get("/:noteId", async (req, res) => {
   try {
-    const pid = (req.params as Params).id;
-    const nid = (req.params as Params).noteId!;
-    if (!(await resolveProject(pid, req, res))) return;
-    const note = await noteStore.getNote(pid, nid);
+    const project = await resolveProject((req.params as Params).id, req, res);
+    if (!project) return;
+    const note = await noteStore.getNote(project.path, (req.params as Params).noteId!);
     if (!note) {
       res.status(404).json({ error: "Note not found" });
       return;
@@ -61,8 +60,8 @@ noteRouter.get("/:noteId", async (req, res) => {
 // POST /api/projects/:id/notes
 noteRouter.post("/", async (req, res) => {
   try {
-    const pid = (req.params as Params).id;
-    if (!(await resolveProject(pid, req, res))) return;
+    const project = await resolveProject((req.params as Params).id, req, res);
+    if (!project) return;
 
     const { title, content, tags } = req.body;
 
@@ -81,7 +80,7 @@ noteRouter.post("/", async (req, res) => {
       return;
     }
 
-    const note = await noteStore.createNote(pid, { title, content, tags });
+    const note = await noteStore.createNote(project.path, { title, content, tags });
     res.status(201).json(note);
   } catch (err) {
     console.error("Note create error:", err);
@@ -92,9 +91,8 @@ noteRouter.post("/", async (req, res) => {
 // PATCH /api/projects/:id/notes/:noteId
 noteRouter.patch("/:noteId", async (req, res) => {
   try {
-    const pid = (req.params as Params).id;
-    const nid = (req.params as Params).noteId!;
-    if (!(await resolveProject(pid, req, res))) return;
+    const project = await resolveProject((req.params as Params).id, req, res);
+    if (!project) return;
 
     const { title, content, tags, pinned } = req.body;
 
@@ -113,7 +111,7 @@ noteRouter.patch("/:noteId", async (req, res) => {
       return;
     }
 
-    const note = await noteStore.updateNote(pid, nid, { title, content, tags, pinned });
+    const note = await noteStore.updateNote(project.path, (req.params as Params).noteId!, { title, content, tags, pinned });
     if (!note) {
       res.status(404).json({ error: "Note not found" });
       return;
@@ -128,15 +126,14 @@ noteRouter.patch("/:noteId", async (req, res) => {
 // DELETE /api/projects/:id/notes/:noteId
 noteRouter.delete("/:noteId", async (req, res) => {
   try {
-    const pid = (req.params as Params).id;
-    const nid = (req.params as Params).noteId!;
-    if (!(await resolveProject(pid, req, res))) return;
-    const deleted = await noteStore.deleteNote(pid, nid);
+    const project = await resolveProject((req.params as Params).id, req, res);
+    if (!project) return;
+    const deleted = await noteStore.deleteNote(project.path, (req.params as Params).noteId!);
     if (!deleted) {
       res.status(404).json({ error: "Note not found" });
       return;
     }
-    res.json({ id: nid });
+    res.json({ id: (req.params as Params).noteId });
   } catch (err) {
     console.error("Note delete error:", err);
     res.status(500).json({ error: "Internal server error" });
