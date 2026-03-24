@@ -30,7 +30,10 @@ sessionsRouter.post("/", async (req, res) => {
     return;
   }
 
-  const tools: string[] = Array.isArray(allowedTools) ? allowedTools : [];
+  const toolNamePattern = /^[a-zA-Z0-9_:.-]+$/;
+  const tools: string[] = Array.isArray(allowedTools)
+    ? allowedTools.filter((t): t is string => typeof t === "string" && toolNamePattern.test(t))
+    : [];
 
   try {
     const session = await sessionManager.createSession(

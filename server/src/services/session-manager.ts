@@ -154,8 +154,13 @@ export async function createSession(
       command += " --continue";
     }
     if (allowedTools.length > 0) {
-      const toolsArg = allowedTools.join(",");
-      command += ` --allowedTools "${toolsArg}"`;
+      // Validate each tool name to prevent command injection via sh -c
+      const toolNamePattern = /^[a-zA-Z0-9_:.-]+$/;
+      const sanitized = allowedTools.filter((t) => toolNamePattern.test(t));
+      if (sanitized.length > 0) {
+        const toolsArg = sanitized.join(",");
+        command += ` --allowedTools "${toolsArg}"`;
+      }
     }
 
     await tmux.createSession(tmuxSessionName, resolvedPath, command);

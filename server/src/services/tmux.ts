@@ -189,7 +189,7 @@ export async function startPipePane(sessionName: string): Promise<void> {
     "-t",
     sessionName,
     "-o",
-    `cat >> ${filePath}`,
+    `cat >> '${filePath}'`,
   ]);
 }
 
