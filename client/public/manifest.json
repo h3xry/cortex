@@ -1,0 +1,14 @@
+{
+  "name": "Claude Code Monitor",
+  "short_name": "CC Monitor",
+  "description": "Monitor and manage Claude Code sessions, projects, and notes",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1e1e2e",
+  "theme_color": "#1e1e2e",
+  "orientation": "any",
+  "icons": [
+    { "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}
