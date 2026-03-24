@@ -1226,7 +1226,7 @@ body {
 .mini-terminal {
   position: relative;
   flex: 1;
-  min-height: 120px;
+  min-height: calc(50vh - 100px);
   border-radius: 4px;
   overflow: hidden;
   background: #11111b;
