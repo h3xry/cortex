@@ -7,11 +7,13 @@ import { ProjectFiles } from "./ProjectFiles";
 import { FileViewer } from "./FileViewer";
 import { SpecBrowser } from "./SpecBrowser";
 import { MarkdownViewer } from "./MarkdownViewer";
+import { NoteList } from "./NoteList";
 import { useSessions } from "../hooks/useSessions";
 import { useTools } from "../hooks/useTools";
 import { useGitStatus } from "../hooks/useGitStatus";
 import { useProjectFiles } from "../hooks/useProjectFiles";
 import { useSpecs } from "../hooks/useSpecs";
+import { useNotes } from "../hooks/useNotes";
 import type { Project, Session } from "../types";
 
 interface ProjectPanelProps {
@@ -21,7 +23,7 @@ interface ProjectPanelProps {
   onSessionActivated?: () => void;
 }
 
-type Tab = "terminal" | "files" | "changes" | "specs";
+type Tab = "terminal" | "files" | "changes" | "specs" | "notes";
 
 export function ProjectPanel({ project, onToggleSidebar, targetSessionId, onSessionActivated }: ProjectPanelProps) {
   const [activeTab, setActiveTab] = useState<Tab>("terminal");
@@ -36,6 +38,7 @@ export function ProjectPanel({ project, onToggleSidebar, targetSessionId, onSess
   const gitStatus = useGitStatus(project.id);
   const projectFiles = useProjectFiles(project.id);
   const specs = useSpecs(project.id);
+  const notesState = useNotes(project.id);
 
   // Fetch git status when switching to files or changes tab
   useEffect(() => {
@@ -147,6 +150,12 @@ export function ProjectPanel({ project, onToggleSidebar, targetSessionId, onSess
             onClick={() => { setActiveTab("specs"); setShowToolSelector(false); specs.fetchFeatures(); }}
           >
             Specs
+          </button>
+          <button
+            className={`panel-tab ${activeTab === "notes" ? "active" : ""}`}
+            onClick={() => { setActiveTab("notes"); setShowToolSelector(false); notesState.fetchNotes(); }}
+          >
+            Notes
           </button>
         </div>
         <div className="panel-actions">
@@ -327,6 +336,13 @@ export function ProjectPanel({ project, onToggleSidebar, targetSessionId, onSess
               </div>
             )}
           </div>
+        )}
+
+        {!showToolSelector && activeTab === "notes" && (
+          <NoteList
+            projectId={project.id}
+            notesState={notesState}
+          />
         )}
       </div>
     </div>

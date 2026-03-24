@@ -89,3 +89,25 @@ export interface GitDiff {
   filePath: string;
   hunks: DiffHunk[];
 }
+
+// Note types
+
+export interface Note {
+  id: string;
+  title: string;
+  content: string;
+  tags: string[];
+  pinned: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface NoteMeta {
+  id: string;
+  title: string;
+  tags: string[];
+  pinned: boolean;
+  snippet: string;
+  createdAt: string;
+  updatedAt: string;
+}
