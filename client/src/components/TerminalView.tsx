@@ -24,10 +24,11 @@ export function TerminalView({
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (!showInput || sessionEnded) return;
-      // If OUR input is already focused, let native behavior handle it
-      // (xterm.js uses its own textarea internally — don't skip for that)
+      // Skip if any non-xterm input/textarea is focused (modals, forms, etc.)
       const active = document.activeElement;
-      if (active?.classList.contains("terminal-input-field")) return;
+      if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) {
+        if (!active.closest(".xterm")) return;
+      }
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       // Printable character: append to input and focus, block xterm from processing
       if (e.key.length === 1) {
