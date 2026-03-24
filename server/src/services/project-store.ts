@@ -22,6 +22,7 @@ async function loadProjects(): Promise<void> {
     projects = JSON.parse(data).map((p: Record<string, unknown>) => ({
       ...p,
       isPrivate: p.isPrivate ?? false,
+      groupId: p.groupId ?? null,
     }));
   } catch {
     projects = [];
@@ -76,6 +77,7 @@ export async function addProject(projectPath: string): Promise<Project> {
     isGitRepo,
     addedAt: new Date().toISOString(),
     isPrivate: false,
+    groupId: null,
   };
 
   projects.push(project);
@@ -100,6 +102,30 @@ export async function setPrivate(
 export async function getPrivateProjectPaths(): Promise<Set<string>> {
   await loadProjects();
   return new Set(projects.filter((p) => p.isPrivate).map((p) => p.path));
+}
+
+export async function setGroupId(
+  id: string,
+  groupId: string | null,
+): Promise<Project> {
+  await loadProjects();
+  const project = projects.find((p) => p.id === id);
+  if (!project) throw new Error("Project not found");
+  project.groupId = groupId;
+  await saveProjects();
+  return { ...project };
+}
+
+export async function unlinkGroup(groupId: string): Promise<void> {
+  await loadProjects();
+  let changed = false;
+  for (const p of projects) {
+    if (p.groupId === groupId) {
+      p.groupId = null;
+      changed = true;
+    }
+  }
+  if (changed) await saveProjects();
 }
 
 export async function removeProject(id: string): Promise<void> {

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import * as projectStore from "../services/project-store.js";
 import * as settingsStore from "../services/settings-store.js";
+import * as groupStore from "../services/group-store.js";
 import { verifyPassword } from "../services/crypto.js";
 import { isUnlockedHeader } from "../services/unlock-store.js";
 
@@ -66,6 +67,33 @@ projectsRouter.patch("/:id/private", async (req, res) => {
       res.status(404).json({ error: "Project not found" });
     } else {
       console.error("Project set-private error:", err);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+});
+
+projectsRouter.patch("/:id/group", async (req, res) => {
+  try {
+    const { groupId } = req.body;
+    if (groupId !== null && typeof groupId !== "string") {
+      res.status(400).json({ error: "groupId must be a string or null" });
+      return;
+    }
+    if (groupId !== null) {
+      const group = await groupStore.getGroup(groupId);
+      if (!group) {
+        res.status(400).json({ error: "Group not found" });
+        return;
+      }
+    }
+    const project = await projectStore.setGroupId(req.params.id, groupId);
+    res.json(project);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "";
+    if (message === "Project not found") {
+      res.status(404).json({ error: "Project not found" });
+    } else {
+      console.error("Project set-group error:", err);
       res.status(500).json({ error: "Internal server error" });
     }
   }

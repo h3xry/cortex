@@ -63,6 +63,16 @@ export interface Project {
   isGitRepo: boolean;
   addedAt: string;
   isPrivate: boolean;
+  groupId: string | null;
+}
+
+export interface Group {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+  order: number;
+  createdAt: string;
 }
 
 export interface FileEntry {

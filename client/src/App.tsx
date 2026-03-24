@@ -7,6 +7,7 @@ import { SetPrivateModal } from "./components/SetPrivateModal";
 import { UnlockModal } from "./components/UnlockModal";
 import { useProjects } from "./hooks/useProjects";
 import { useSessions } from "./hooks/useSessions";
+import { useGroups } from "./hooks/useGroups";
 import type { Project, Session } from "./types";
 
 export function App() {
@@ -20,11 +21,14 @@ export function App() {
     unlocked,
     hasGlobalPassword,
     hasPrivateProjects,
+    fetchProjects,
   } = useProjects();
   const { sessions, deleteSession } = useSessions();
+  const groupsState = useGroups();
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mainView, setMainView] = useState<"project" | "sessions">("project");
+  const [groupFilter, setGroupFilter] = useState<string | null>(null);
   const [privateTarget, setPrivateTarget] = useState<Project | null>(null);
   const [removePrivateTarget, setRemovePrivateTarget] = useState<Project | null>(null);
   const [showUnlock, setShowUnlock] = useState(false);
@@ -134,10 +138,18 @@ export function App() {
           sessions={sessions}
           selectedProjectId={selectedProject?.id ?? null}
           unlocked={unlocked}
+          groups={groupsState.groups}
+          groupFilter={groupFilter}
           onSelect={handleSelectProject}
           onRemove={handleRemoveProject}
           onSetPrivate={(p) => setPrivateTarget(p)}
           onRemovePrivate={(p) => setRemovePrivateTarget(p)}
+          onCreateGroup={groupsState.createGroup}
+          onUpdateGroup={groupsState.updateGroup}
+          onDeleteGroup={groupsState.deleteGroup}
+          onReorderGroups={groupsState.reorderGroups}
+          onAssignProjectGroup={async (pid, gid) => { await groupsState.assignProjectGroup(pid, gid); fetchProjects(); }}
+          onSetGroupFilter={setGroupFilter}
         />
 
         {hasPrivateProjects && (
