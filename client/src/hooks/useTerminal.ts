@@ -146,6 +146,9 @@ export function useTerminal(sessionId: string) {
       } else {
         term.write(data, () => {
           writingData = false;
+          // After write completes, ensure scroll is at bottom.
+          // fit() from ResizeObserver may have reset scroll to top during async write.
+          term.scrollToBottom();
         });
       }
     };
@@ -174,7 +177,7 @@ export function useTerminal(sessionId: string) {
         retryCount = 0;
         setConnectionState("connected");
         // Sync tmux size with xterm on connect
-        fitAddon.fit();
+        fitAndRestore();
         const { cols, rows } = term;
         ws.send(JSON.stringify({ type: "resize", cols, rows }));
       };
@@ -243,24 +246,43 @@ export function useTerminal(sessionId: string) {
     // Initial connection
     connectWs();
 
-    const handleResize = () => fitAddon.fit();
+    const fitAndRestore = () => {
+      fitAddon.fit();
+      // fitAddon.fit() can reset viewport scroll to top — restore position
+      if (!userScrollingRef.current) {
+        term.scrollToBottom();
+      } else if (viewport) {
+        // User was scrolling — keep their position
+        const savedScroll = viewport.scrollTop;
+        requestAnimationFrame(() => {
+          viewport.scrollTop = savedScroll;
+        });
+      }
+    };
+
+    let fitDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+    const debouncedFit = () => {
+      if (fitDebounceTimer) clearTimeout(fitDebounceTimer);
+      fitDebounceTimer = setTimeout(fitAndRestore, 100);
+    };
+
+    const handleResize = () => debouncedFit();
     window.addEventListener("resize", handleResize);
 
     // Also watch container size changes (tab switch, panel resize)
     const resizeObserver = new ResizeObserver(() => {
-      fitAddon.fit();
+      debouncedFit();
     });
     resizeObserver.observe(terminalRef.current);
 
     // Initial resize to sync tmux with xterm size
-    setTimeout(() => {
-      fitAddon.fit();
-    }, 100);
+    debouncedFit();
 
     return () => {
       intentionalClose = true;
       reconnectRef.current = null;
       if (reconnectTimer) clearTimeout(reconnectTimer);
+      if (fitDebounceTimer) clearTimeout(fitDebounceTimer);
       touchCleanup?.();
       viewport?.removeEventListener("scroll", onViewportScroll);
       window.removeEventListener("resize", handleResize);

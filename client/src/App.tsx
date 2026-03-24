@@ -143,7 +143,14 @@ export function App() {
         {hasPrivateProjects && (
           <div className="sidebar-unlock">
             {unlocked ? (
-              <button className="unlock-button unlocked" onClick={lock}>
+              <button className="unlock-button unlocked" onClick={() => {
+                // Deselect private project before locking
+                if (selectedProject?.isPrivate) {
+                  setSelectedProject(null);
+                  setTargetSessionId(null);
+                }
+                lock();
+              }}>
                 Unlocked
               </button>
             ) : (
