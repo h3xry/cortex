@@ -80,7 +80,17 @@ export function ProjectPanel({ project, onToggleSidebar, targetSessionId, onSess
       )
     : null;
 
-  const handleLaunch = () => setShowToolSelector(true);
+  const [launchMode, setLaunchMode] = useState<"new" | "continue">("new");
+
+  const handleLaunch = () => {
+    setLaunchMode("new");
+    setShowToolSelector(true);
+  };
+
+  const handleContinue = () => {
+    setLaunchMode("continue");
+    setShowToolSelector(true);
+  };
 
   const handleConfirmLaunch = async () => {
     setLaunching(true);
@@ -89,6 +99,7 @@ export function ProjectPanel({ project, onToggleSidebar, targetSessionId, onSess
       const session = await createSession(
         project.path,
         allowedTools.length > 0 ? allowedTools : undefined,
+        launchMode === "continue",
       );
       setActiveSession(session);
       setShowToolSelector(false);
@@ -139,8 +150,11 @@ export function ProjectPanel({ project, onToggleSidebar, targetSessionId, onSess
           </button>
         </div>
         <div className="panel-actions">
+          <button className="continue-button-small" onClick={handleContinue}>
+            Continue
+          </button>
           <button className="launch-button-small" onClick={handleLaunch}>
-            Launch
+            New
           </button>
         </div>
       </div>
@@ -169,8 +183,11 @@ export function ProjectPanel({ project, onToggleSidebar, targetSessionId, onSess
                     className={`session-tab ${activeSession?.id === s.id ? "active" : ""}`}
                     onClick={() => handleSelectSession(s)}
                   >
-                    <span className={`status-badge status-${s.status}`} />
+                    <span className={`activity-badge activity-${s.activity?.status ?? "unknown"}`} />
                     {s.id}
+                    {s.activity?.status === "working" && s.activity.toolName && (
+                      <span className="activity-tool">{s.activity.toolName}</span>
+                    )}
                   </button>
                 ))}
               </div>

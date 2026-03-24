@@ -6,11 +6,12 @@ import {
   InvalidPathError,
   SessionNotFoundError,
 } from "../errors.js";
+import { getActivityByFolderPath } from "../services/session-activity.js";
 
 export const sessionsRouter = Router();
 
 sessionsRouter.post("/", async (req, res) => {
-  const { folderPath, projectId, allowedTools } = req.body;
+  const { folderPath, projectId, allowedTools, continueConversation } = req.body;
 
   let resolvedPath: string | undefined = folderPath;
 
@@ -32,7 +33,11 @@ sessionsRouter.post("/", async (req, res) => {
   const tools: string[] = Array.isArray(allowedTools) ? allowedTools : [];
 
   try {
-    const session = await sessionManager.createSession(resolvedPath, tools);
+    const session = await sessionManager.createSession(
+      resolvedPath,
+      tools,
+      !!continueConversation,
+    );
     res.status(201).json({
       id: session.id,
       folderPath: session.folderPath,
@@ -68,6 +73,7 @@ sessionsRouter.get("/", async (_req, res) => {
           endedAt: s.endedAt,
           projectName: matchedProject?.name ?? null,
           lastOutput: sessionManager.getLastOutput(s.id),
+          activity: getActivityByFolderPath(s.folderPath),
         };
       }),
     });

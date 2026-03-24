@@ -132,6 +132,7 @@ export function App() {
 
         <ProjectList
           projects={projects}
+          sessions={sessions}
           selectedProjectId={selectedProject?.id ?? null}
           unlocked={unlocked}
           onSelect={handleSelectProject}

@@ -424,12 +424,42 @@ body {
   font-weight: 500;
 }
 
+.project-badges {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .git-badge {
   font-size: 10px;
   padding: 1px 5px;
   border-radius: 3px;
   background: #a6e3a1;
   color: #1e1e2e;
+  font-weight: 600;
+}
+
+.activity-badge-pill {
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-weight: 600;
+}
+
+.activity-pill-unknown { background: #585b70; color: #cdd6f4; }
+.activity-pill-idle { background: #585b70; color: #cdd6f4; }
+.activity-pill-done { background: #1e3a2f; color: #a6e3a1; }
+.activity-pill-thinking { background: #313450; color: #89b4fa; animation: pulse 1.5s infinite; }
+.activity-pill-working { background: #3d3520; color: #f9e2af; animation: pulse 1s infinite; }
+.activity-pill-help { background: #3d2030; color: #f38ba8; animation: pulse 0.8s infinite; }
+.activity-pill-error { background: #3d2030; color: #f38ba8; }
+
+.session-count-badge {
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: #45475a;
+  color: #a6adc8;
   font-weight: 600;
 }
 
@@ -901,6 +931,33 @@ body {
 .status-starting { background: #f9e2af; }
 .status-running { background: #a6e3a1; }
 .status-ended { background: #6c7086; }
+
+/* Activity badges */
+.activity-badge {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.activity-unknown { background: #585b70; }
+.activity-idle { background: #6c7086; }
+.activity-thinking { background: #89b4fa; animation: pulse 1.5s infinite; }
+.activity-working { background: #f9e2af; animation: pulse 1s infinite; }
+.activity-done { background: #a6e3a1; }
+.activity-help { background: #f38ba8; animation: pulse 0.8s infinite; }
+.activity-error { background: #f38ba8; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.activity-tool {
+  font-size: 10px;
+  color: #6c7086;
+  margin-left: 2px;
+}
 
 .session-folder {
   font-size: 13px;

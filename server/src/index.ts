@@ -8,9 +8,14 @@ import { projectsRouter } from "./routes/projects.js";
 import { projectGitRouter } from "./routes/project-git.js";
 import { projectFilesRouter } from "./routes/project-files.js";
 import { privateRouter } from "./routes/private.js";
+import { hooksRouter } from "./routes/hooks.js";
 import { handleWebSocketUpgrade } from "./ws/terminal.js";
 import { ALLOWED_ORIGINS, PORT } from "./config.js";
 import { reconnectSessions } from "./services/session-manager.js";
+import {
+  ensureHooksConfigured,
+  cleanupOldCommandHooks,
+} from "./services/hook-setup.js";
 
 const app = express();
 const server = createServer(app);
@@ -25,6 +30,7 @@ app.use("/api/projects", projectsRouter);
 app.use("/api/projects/:id/git", projectGitRouter);
 app.use("/api/projects/:id/files", projectFilesRouter);
 app.use("/api/private", privateRouter);
+app.use("/api/hooks", hooksRouter);
 
 handleWebSocketUpgrade(server);
 
@@ -34,4 +40,6 @@ server.listen(PORT, async () => {
   if (count > 0) {
     console.log(`Reconnected ${count} existing tmux sessions`);
   }
+  await cleanupOldCommandHooks();
+  await ensureHooksConfigured();
 });

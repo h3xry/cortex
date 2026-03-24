@@ -1,5 +1,14 @@
 export type SessionStatus = "starting" | "running" | "ended";
 
+export type ActivityStatus = "unknown" | "idle" | "thinking" | "working" | "done" | "help" | "error";
+
+export interface SessionActivity {
+  status: ActivityStatus;
+  toolName: string | null;
+  lastEvent: string;
+  lastEventAt: string;
+}
+
 export interface Session {
   id: string;
   folderPath: string;
@@ -9,6 +18,7 @@ export interface Session {
   endedAt: string | null;
   projectName: string | null;
   lastOutput: string;
+  activity: SessionActivity;
 }
 
 export interface FolderEntry {

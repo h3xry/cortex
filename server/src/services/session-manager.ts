@@ -45,7 +45,7 @@ export async function reconnectSessions(): Promise<number> {
     // Skip if already in memory
     if (sessions.has(id)) continue;
 
-    const folderPath = ts.paneCurrentPath || "/unknown";
+    const folderPath = ts.paneCurrentPath ? path.resolve(ts.paneCurrentPath) : "/unknown";
 
     const session: Session = {
       id,
