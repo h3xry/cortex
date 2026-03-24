@@ -26,7 +26,7 @@ export const TerminalInput = forwardRef<TerminalInputHandle, TerminalInputProps>
   onSendControl,
   disabled,
 }, ref) {
-  const nativeRef = useRef<HTMLInputElement>(null);
+  const nativeRef = useRef<HTMLTextAreaElement>(null);
 
   useImperativeHandle(ref, () => ({
     focus: () => nativeRef.current?.focus(),
@@ -37,7 +37,7 @@ export const TerminalInput = forwardRef<TerminalInputHandle, TerminalInputProps>
   }));
   const [input, setInput] = useState("");
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     // Ctrl+C
     if (e.ctrlKey && e.key === "c") {
       e.preventDefault();
@@ -70,18 +70,18 @@ export const TerminalInput = forwardRef<TerminalInputHandle, TerminalInputProps>
 
   return (
     <div className="terminal-input">
-      <input
+      <textarea
         ref={nativeRef}
-        type="text"
         value={input}
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder={
-          disabled ? "Session ended" : "Type input... (Alt+Arrow to navigate, Ctrl+C to interrupt)"
+          disabled ? "Session ended" : "Type input... (Enter to send, Shift+Enter for newline)"
         }
         disabled={disabled}
         className="terminal-input-field"
         autoFocus
+        rows={2}
       />
       <div className="terminal-input-buttons">
         <button

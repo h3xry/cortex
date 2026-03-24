@@ -1546,6 +1546,9 @@ body {
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
   font-size: 13px;
   outline: none;
+  resize: none;
+  line-height: 1.4;
+  box-sizing: border-box;
 }
 
 .terminal-input-field:focus {
