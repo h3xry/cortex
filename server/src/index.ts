@@ -9,6 +9,7 @@ import { projectGitRouter } from "./routes/project-git.js";
 import { projectFilesRouter } from "./routes/project-files.js";
 import { privateRouter } from "./routes/private.js";
 import { hooksRouter } from "./routes/hooks.js";
+import { planRouter } from "./routes/plans.js";
 import { handleWebSocketUpgrade } from "./ws/terminal.js";
 import { ALLOWED_ORIGINS, PORT } from "./config.js";
 import { reconnectSessions } from "./services/session-manager.js";
@@ -30,6 +31,7 @@ app.use("/api/projects", projectsRouter);
 app.use("/api/projects/:id/git", projectGitRouter);
 app.use("/api/projects/:id/files", projectFilesRouter);
 app.use("/api/private", privateRouter);
+app.use("/api/projects/:id/plan", planRouter);
 app.use("/api/hooks", hooksRouter);
 
 handleWebSocketUpgrade(server);

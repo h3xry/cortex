@@ -89,3 +89,49 @@ export interface GitDiff {
   filePath: string;
   hunks: DiffHunk[];
 }
+
+// Plan types
+
+export type TaskStatus = "Backlog" | "Sprint" | "InProgress" | "Review" | "Done";
+
+export interface SubTask {
+  title: string;
+  done: boolean;
+  effort: string | null;
+}
+
+export interface PlanTask {
+  id: string;
+  title: string;
+  description: string | null;
+  tags: string[];
+  status: TaskStatus;
+  subTasks: SubTask[];
+  effort: string | null;
+  milestoneId: string | null;
+  sprintId: string | null;
+  done: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Milestone {
+  id: string;
+  title: string;
+  deadline: string;
+  taskRefs: string[];
+}
+
+export interface Sprint {
+  id: string;
+  title: string;
+  startDate: string;
+  endDate: string;
+  taskRefs: string[];
+}
+
+export interface Plan {
+  tasks: PlanTask[];
+  milestones: Milestone[];
+  sprints: Sprint[];
+}
