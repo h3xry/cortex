@@ -2,11 +2,16 @@ import { Router } from "express";
 import * as projectStore from "../services/project-store.js";
 import * as settingsStore from "../services/settings-store.js";
 import { verifyPassword } from "../services/crypto.js";
+import { isUnlockedHeader } from "../services/unlock-store.js";
 
 export const projectsRouter = Router();
 
-projectsRouter.get("/", async (_req, res) => {
-  const projects = await projectStore.listProjects();
+projectsRouter.get("/", async (req, res) => {
+  const allProjects = await projectStore.listProjects();
+  const unlocked = isUnlockedHeader(req.headers);
+  const projects = unlocked
+    ? allProjects
+    : allProjects.filter((p) => !p.isPrivate);
   res.json({ projects });
 });
 

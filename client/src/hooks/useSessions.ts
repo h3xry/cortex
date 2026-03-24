@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import type { Session } from "../types";
+import { getAuthHeaders } from "../unlock-token";
 
 export function useSessions() {
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -7,7 +8,7 @@ export function useSessions() {
 
   const refreshSessions = useCallback(async () => {
     try {
-      const res = await fetch("/api/sessions");
+      const res = await fetch("/api/sessions", { headers: getAuthHeaders() });
       if (res.ok) {
         const data = await res.json();
         // Only update state if data actually changed (prevent unnecessary re-renders)
@@ -37,7 +38,7 @@ export function useSessions() {
 
       const res = await fetch("/api/sessions", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify(body),
       });
       if (!res.ok) {
@@ -59,7 +60,7 @@ export function useSessions() {
 
   const deleteSession = useCallback(
     async (id: string) => {
-      const res = await fetch(`/api/sessions/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/sessions/${id}`, { method: "DELETE", headers: getAuthHeaders() });
       if (!res.ok) {
         const text = await res.text();
         let parsed: { error?: string } = {};

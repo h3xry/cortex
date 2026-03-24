@@ -1,6 +1,8 @@
 import { WebSocketServer, WebSocket } from "ws";
 import type { Server } from "node:http";
 import * as sessionManager from "../services/session-manager.js";
+import * as projectStore from "../services/project-store.js";
+import { isValidToken } from "../services/unlock-store.js";
 import { ALLOWED_ORIGINS, PORT } from "../config.js";
 import type { WsMessage, WsClientMessage } from "../types.js";
 import * as tmux from "../services/tmux.js";
@@ -13,7 +15,7 @@ const WS_ALLOWED_ORIGINS = new Set([
 export function handleWebSocketUpgrade(server: Server): void {
   const wss = new WebSocketServer({ noServer: true });
 
-  server.on("upgrade", (request, socket, head) => {
+  server.on("upgrade", async (request, socket, head) => {
     const origin = request.headers.origin;
     if (origin && !WS_ALLOWED_ORIGINS.has(origin)) {
       socket.destroy();
@@ -30,10 +32,26 @@ export function handleWebSocketUpgrade(server: Server): void {
     }
 
     const readonly = url.searchParams.get("readonly") === "1";
-    console.log(`[WS] ACCEPTED: session=${match[1]}${readonly ? " (readonly)" : ""}`);
+    const token = url.searchParams.get("token");
+
+    // Check if session belongs to a private project
+    const sessionId = match[1];
+    const session = sessionManager.getSession(sessionId);
+    if (session) {
+      const privatePaths = await projectStore.getPrivateProjectPaths();
+      if (privatePaths.has(session.folderPath)) {
+        if (!token || !isValidToken(token)) {
+          console.log(`[WS] REJECTED: private session ${sessionId}, no valid token`);
+          socket.destroy();
+          return;
+        }
+      }
+    }
+
+    console.log(`[WS] ACCEPTED: session=${sessionId}${readonly ? " (readonly)" : ""}`);
 
     wss.handleUpgrade(request, socket, head, (ws) => {
-      handleConnection(ws, match[1], readonly);
+      handleConnection(ws, sessionId, readonly);
     });
   });
 }

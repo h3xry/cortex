@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Terminal } from "@xterm/xterm";
 import type { WsMessage } from "../types";
+import { getUnlockToken } from "../unlock-token";
 
 interface MiniTerminalProps {
   sessionId: string;
@@ -58,7 +59,9 @@ export function MiniTerminal({ sessionId, status }: MiniTerminalProps) {
 
     // Read-only WebSocket — NO resize messages sent
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${protocol}//${window.location.host}/stream/sessions/${sessionId}?readonly=1`;
+    const token = getUnlockToken();
+    const tokenParam = token ? `&token=${encodeURIComponent(token)}` : "";
+    const wsUrl = `${protocol}//${window.location.host}/stream/sessions/${sessionId}?readonly=1${tokenParam}`;
     const ws = new WebSocket(wsUrl);
 
     ws.onmessage = (event) => {

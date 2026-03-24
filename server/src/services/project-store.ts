@@ -97,6 +97,11 @@ export async function setPrivate(
   return { ...project };
 }
 
+export async function getPrivateProjectPaths(): Promise<Set<string>> {
+  await loadProjects();
+  return new Set(projects.filter((p) => p.isPrivate).map((p) => p.path));
+}
+
 export async function removeProject(id: string): Promise<void> {
   await loadProjects();
   const index = projects.findIndex((p) => p.id === id);

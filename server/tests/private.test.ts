@@ -14,14 +14,22 @@ vi.mock("../src/services/crypto.js", () => ({
   verifyPassword: vi.fn(),
 }));
 
+vi.mock("../src/services/unlock-store.js", () => ({
+  addToken: vi.fn(),
+  removeToken: vi.fn(),
+}));
+
 import * as settingsStore from "../src/services/settings-store.js";
 import * as crypto from "../src/services/crypto.js";
+import * as unlockStore from "../src/services/unlock-store.js";
 
 const mockHasPassword = vi.mocked(settingsStore.hasPassword);
 const mockGetPasswordHash = vi.mocked(settingsStore.getPasswordHash);
 const mockSetPasswordHash = vi.mocked(settingsStore.setPasswordHash);
 const mockHashPassword = vi.mocked(crypto.hashPassword);
 const mockVerifyPassword = vi.mocked(crypto.verifyPassword);
+const mockAddToken = vi.mocked(unlockStore.addToken);
+const mockRemoveToken = vi.mocked(unlockStore.removeToken);
 
 function createApp() {
   const app = express();
@@ -126,14 +134,37 @@ describe("POST /api/private/unlock", () => {
     expect(res.body.error).toMatch(/Incorrect/);
   });
 
-  it("unlocks with correct password", async () => {
+  it("returns token on successful unlock", async () => {
     mockGetPasswordHash.mockResolvedValue("salt:hash");
     mockVerifyPassword.mockResolvedValue(true);
+    mockAddToken.mockReturnValue("test-uuid-token");
 
     const res = await request(createApp())
       .post("/api/private/unlock")
       .send({ password: "correct" });
     expect(res.status).toBe(200);
+    expect(res.body).toEqual({ ok: true, token: "test-uuid-token" });
+    expect(mockAddToken).toHaveBeenCalled();
+  });
+});
+
+describe("POST /api/private/lock", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("removes token from header", async () => {
+    const res = await request(createApp())
+      .post("/api/private/lock")
+      .set("X-Unlock-Token", "some-token");
+    expect(res.status).toBe(200);
     expect(res.body).toEqual({ ok: true });
+    expect(mockRemoveToken).toHaveBeenCalledWith("some-token");
+  });
+
+  it("returns ok even without token header", async () => {
+    const res = await request(createApp())
+      .post("/api/private/lock");
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ ok: true });
+    expect(mockRemoveToken).not.toHaveBeenCalled();
   });
 });

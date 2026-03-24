@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback, useState } from "react";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import type { WsMessage, WsClientMessage } from "../types";
+import { getUnlockToken } from "../unlock-token";
 
 export type ConnectionState = "connected" | "reconnecting" | "failed";
 
@@ -158,7 +159,9 @@ export function useTerminal(sessionId: string) {
 
     const connectWs = () => {
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      const wsUrl = `${protocol}//${window.location.host}/stream/sessions/${sessionId}`;
+      const token = getUnlockToken();
+      const tokenParam = token ? `?token=${encodeURIComponent(token)}` : "";
+      const wsUrl = `${protocol}//${window.location.host}/stream/sessions/${sessionId}${tokenParam}`;
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 

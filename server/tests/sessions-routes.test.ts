@@ -20,10 +20,20 @@ vi.mock("../src/services/session-manager.js", () => ({
 vi.mock("../src/services/project-store.js", () => ({
   listProjects: vi.fn().mockResolvedValue([]),
   getProject: vi.fn(),
+  getPrivateProjectPaths: vi.fn().mockResolvedValue(new Set()),
+}));
+
+vi.mock("../src/services/unlock-store.js", () => ({
+  isUnlockedHeader: vi.fn(),
+}));
+
+vi.mock("../src/services/session-activity.js", () => ({
+  getActivityByFolderPath: vi.fn().mockReturnValue(null),
 }));
 
 import * as sessionManager from "../src/services/session-manager.js";
 import * as projectStore from "../src/services/project-store.js";
+import * as unlockStore from "../src/services/unlock-store.js";
 
 const mockedCreateSession = vi.mocked(sessionManager.createSession);
 const mockedListSessions = vi.mocked(sessionManager.listSessions);
@@ -32,6 +42,9 @@ const mockedGetSession = vi.mocked(sessionManager.getSession);
 const mockedGetLastOutput = vi.mocked(sessionManager.getLastOutput);
 const mockedRemoveSession = vi.mocked(sessionManager.removeSession);
 const mockedListProjects = vi.mocked(projectStore.listProjects);
+const mockedGetPrivateProjectPaths = vi.mocked(projectStore.getPrivateProjectPaths);
+const mockedGetProject = vi.mocked(projectStore.getProject);
+const mockedIsUnlockedHeader = vi.mocked(unlockStore.isUnlockedHeader);
 
 function createApp() {
   const app = express();
@@ -43,6 +56,8 @@ function createApp() {
 describe("POST /api/sessions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockedIsUnlockedHeader.mockReturnValue(false);
+    mockedGetPrivateProjectPaths.mockResolvedValue(new Set());
   });
 
   it("should return 201 with session on success", async () => {
@@ -111,10 +126,59 @@ describe("POST /api/sessions", () => {
     expect(res.body.error).toBe("Internal server error");
     expect(res.body.error).not.toContain("secret");
   });
+
+  it("should reject 403 when folderPath matches private project", async () => {
+    mockedGetPrivateProjectPaths.mockResolvedValue(new Set(["/tmp/secret"]));
+
+    const res = await request(createApp())
+      .post("/api/sessions")
+      .send({ folderPath: "/tmp/secret" });
+
+    expect(res.status).toBe(403);
+    expect(res.body.error).toBe("Project is private");
+  });
+
+  it("should reject 403 when projectId resolves to private project path", async () => {
+    mockedGetProject.mockResolvedValue({
+      id: "priv1", name: "secret", path: "/tmp/secret",
+      isGitRepo: false, addedAt: "2026-01-01", isPrivate: true,
+    });
+    mockedGetPrivateProjectPaths.mockResolvedValue(new Set(["/tmp/secret"]));
+
+    const res = await request(createApp())
+      .post("/api/sessions")
+      .send({ projectId: "priv1" });
+
+    expect(res.status).toBe(403);
+    expect(res.body.error).toBe("Project is private");
+  });
+
+  it("should allow private project session when unlocked", async () => {
+    mockedIsUnlockedHeader.mockReturnValue(true);
+    const session = {
+      id: "abc12345",
+      tmuxSessionName: "cc-abc12345",
+      folderPath: "/tmp/secret",
+      status: "running" as const,
+      createdAt: "2026-03-23T10:00:00Z",
+      endedAt: null,
+    };
+    mockedCreateSession.mockResolvedValue(session);
+
+    const res = await request(createApp())
+      .post("/api/sessions")
+      .send({ folderPath: "/tmp/secret" });
+
+    expect(res.status).toBe(201);
+  });
 });
 
 describe("GET /api/sessions", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockedIsUnlockedHeader.mockReturnValue(false);
+    mockedGetPrivateProjectPaths.mockResolvedValue(new Set());
+  });
 
   it("should return sessions with projectName and lastOutput", async () => {
     mockedListSessions.mockReturnValue([
@@ -157,6 +221,63 @@ describe("GET /api/sessions", () => {
     const res = await request(createApp()).get("/api/sessions");
 
     expect(res.body.sessions[0].projectName).toBeNull();
+  });
+
+  it("should filter out sessions of private projects when locked", async () => {
+    mockedGetPrivateProjectPaths.mockResolvedValue(new Set(["/tmp/secret"]));
+    mockedListSessions.mockReturnValue([
+      {
+        id: "pub-sess",
+        tmuxSessionName: "cc-pub",
+        folderPath: "/tmp/public",
+        status: "running",
+        createdAt: "2026-03-23T10:00:00Z",
+        endedAt: null,
+      },
+      {
+        id: "priv-sess",
+        tmuxSessionName: "cc-priv",
+        folderPath: "/tmp/secret",
+        status: "running",
+        createdAt: "2026-03-23T10:00:00Z",
+        endedAt: null,
+      },
+    ]);
+    mockedListProjects.mockResolvedValue([]);
+    mockedGetLastOutput.mockReturnValue("");
+
+    const res = await request(createApp()).get("/api/sessions");
+
+    expect(res.body.sessions).toHaveLength(1);
+    expect(res.body.sessions[0].id).toBe("pub-sess");
+  });
+
+  it("should show all sessions when unlocked", async () => {
+    mockedIsUnlockedHeader.mockReturnValue(true);
+    mockedListSessions.mockReturnValue([
+      {
+        id: "pub-sess",
+        tmuxSessionName: "cc-pub",
+        folderPath: "/tmp/public",
+        status: "running",
+        createdAt: "2026-03-23T10:00:00Z",
+        endedAt: null,
+      },
+      {
+        id: "priv-sess",
+        tmuxSessionName: "cc-priv",
+        folderPath: "/tmp/secret",
+        status: "running",
+        createdAt: "2026-03-23T10:00:00Z",
+        endedAt: null,
+      },
+    ]);
+    mockedListProjects.mockResolvedValue([]);
+    mockedGetLastOutput.mockReturnValue("");
+
+    const res = await request(createApp()).get("/api/sessions");
+
+    expect(res.body.sessions).toHaveLength(2);
   });
 });
 

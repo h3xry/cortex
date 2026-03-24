@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { hashPassword, verifyPassword } from "../services/crypto.js";
 import * as settingsStore from "../services/settings-store.js";
+import { addToken, removeToken } from "../services/unlock-store.js";
 
 export const privateRouter = Router();
 
@@ -71,9 +72,19 @@ privateRouter.post("/unlock", async (req, res) => {
       return;
     }
 
-    res.json({ ok: true });
+    const token = addToken();
+    res.json({ ok: true, token });
   } catch (err) {
     console.error("Private unlock error:", err);
     res.status(500).json({ error: "Internal server error" });
   }
+});
+
+// POST /api/private/lock
+privateRouter.post("/lock", (req, res) => {
+  const token = req.headers["x-unlock-token"];
+  if (typeof token === "string") {
+    removeToken(token);
+  }
+  res.json({ ok: true });
 });

@@ -12,7 +12,6 @@ import type { Project, Session } from "./types";
 export function App() {
   const {
     projects,
-    allProjects,
     addProject,
     removeProject,
     setProjectPrivate,
@@ -75,7 +74,7 @@ export function App() {
 
   const handleSelectSession = useCallback(
     (session: Session) => {
-      const matchedProject = allProjects.find((p) => p.path === session.folderPath);
+      const matchedProject = projects.find((p) => p.path === session.folderPath);
       if (matchedProject) {
         setSelectedProject(matchedProject);
         setTargetSessionId(session.id);
@@ -83,7 +82,7 @@ export function App() {
       setMainView("project");
       setSidebarOpen(false);
     },
-    [allProjects],
+    [projects],
   );
 
   const handleKillSession = useCallback(

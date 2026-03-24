@@ -1,18 +1,19 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { Project } from "../types";
+import { getUnlockToken, setUnlockToken, clearUnlockToken, getAuthHeaders } from "../unlock-token";
 
 export function useProjects() {
-  const [allProjects, setAllProjects] = useState<Project[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [unlocked, setUnlocked] = useState(false);
   const [hasGlobalPassword, setHasGlobalPassword] = useState(false);
 
   const fetchProjects = useCallback(async () => {
     try {
-      const res = await fetch("/api/projects");
+      const res = await fetch("/api/projects", { headers: getAuthHeaders() });
       if (res.ok) {
         const data = await res.json();
-        setAllProjects(data.projects);
+        setProjects(data.projects);
       }
     } catch {
       // Silent fail on poll
@@ -35,7 +36,7 @@ export function useProjects() {
     async (path: string): Promise<Project> => {
       const res = await fetch("/api/projects", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({ path }),
       });
       if (!res.ok) {
@@ -51,7 +52,7 @@ export function useProjects() {
 
   const removeProject = useCallback(
     async (id: string) => {
-      await fetch(`/api/projects/${id}`, { method: "DELETE" });
+      await fetch(`/api/projects/${id}`, { method: "DELETE", headers: getAuthHeaders() });
       await fetchProjects();
     },
     [fetchProjects],
@@ -79,7 +80,7 @@ export function useProjects() {
 
       const res = await fetch(`/api/projects/${id}/private`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({ isPrivate, password }),
       });
       if (!res.ok) {
@@ -102,28 +103,28 @@ export function useProjects() {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error ?? "Unlock failed");
       }
+      const data = await res.json();
+      setUnlockToken(data.token);
       setUnlocked(true);
+      await fetchProjects();
     },
-    [],
+    [fetchProjects],
   );
 
-  const lock = useCallback(() => {
+  const lock = useCallback(async () => {
+    const token = getUnlockToken();
+    if (token) {
+      await fetch("/api/private/lock", {
+        method: "POST",
+        headers: { "X-Unlock-Token": token },
+      }).catch(() => {});
+    }
+    clearUnlockToken();
     setUnlocked(false);
-  }, []);
+    await fetchProjects();
+  }, [fetchProjects]);
 
-  // Filtered projects: hide private unless unlocked
-  const projects = useMemo(
-    () =>
-      unlocked
-        ? allProjects
-        : allProjects.filter((p) => !p.isPrivate),
-    [allProjects, unlocked],
-  );
-
-  const hasPrivateProjects = useMemo(
-    () => allProjects.some((p) => p.isPrivate),
-    [allProjects],
-  );
+  const hasPrivateProjects = hasGlobalPassword;
 
   useEffect(() => {
     fetchProjects();
@@ -132,7 +133,6 @@ export function useProjects() {
 
   return {
     projects,
-    allProjects,
     error,
     unlocked,
     hasGlobalPassword,

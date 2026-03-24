@@ -7,6 +7,7 @@ import {
   SessionNotFoundError,
 } from "../errors.js";
 import { getActivityByFolderPath } from "../services/session-activity.js";
+import { isUnlockedHeader } from "../services/unlock-store.js";
 
 export const sessionsRouter = Router();
 
@@ -28,6 +29,15 @@ sessionsRouter.post("/", async (req, res) => {
   if (!resolvedPath || typeof resolvedPath !== "string") {
     res.status(400).json({ error: "folderPath or projectId is required" });
     return;
+  }
+
+  // Check if resolved path belongs to a private project
+  if (!isUnlockedHeader(req.headers)) {
+    const privatePaths = await projectStore.getPrivateProjectPaths();
+    if (privatePaths.has(resolvedPath)) {
+      res.status(403).json({ error: "Project is private" });
+      return;
+    }
   }
 
   const toolNamePattern = /^[a-zA-Z0-9_:.-]+$/;
@@ -60,25 +70,31 @@ sessionsRouter.post("/", async (req, res) => {
   }
 });
 
-sessionsRouter.get("/", async (_req, res) => {
+sessionsRouter.get("/", async (req, res) => {
   try {
     const sessions = sessionManager.listSessions();
     const projects = await projectStore.listProjects();
+    const unlocked = isUnlockedHeader(req.headers);
+    const privatePaths = unlocked
+      ? new Set<string>()
+      : await projectStore.getPrivateProjectPaths();
 
     res.json({
-      sessions: sessions.map((s) => {
-        const matchedProject = projects.find((p) => p.path === s.folderPath);
-        return {
-          id: s.id,
-          folderPath: s.folderPath,
-          status: s.status,
-          createdAt: s.createdAt,
-          endedAt: s.endedAt,
-          projectName: matchedProject?.name ?? null,
-          lastOutput: sessionManager.getLastOutput(s.id),
-          activity: getActivityByFolderPath(s.folderPath),
-        };
-      }),
+      sessions: sessions
+        .filter((s) => !privatePaths.has(s.folderPath))
+        .map((s) => {
+          const matchedProject = projects.find((p) => p.path === s.folderPath);
+          return {
+            id: s.id,
+            folderPath: s.folderPath,
+            status: s.status,
+            createdAt: s.createdAt,
+            endedAt: s.endedAt,
+            projectName: matchedProject?.name ?? null,
+            lastOutput: sessionManager.getLastOutput(s.id),
+            activity: getActivityByFolderPath(s.folderPath),
+          };
+        }),
     });
   } catch (err) {
     console.error("Session list error:", err);
