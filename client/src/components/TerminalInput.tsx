@@ -1,4 +1,9 @@
-import { useState, type KeyboardEvent } from "react";
+import { useState, useRef, useImperativeHandle, forwardRef, type KeyboardEvent } from "react";
+
+export interface TerminalInputHandle {
+  focus: () => void;
+  appendText: (text: string) => void;
+}
 
 interface TerminalInputProps {
   onSendInput: (text: string) => void;
@@ -16,11 +21,20 @@ const ALT_KEYS: Record<string, string> = {
   Escape: "Escape",
 };
 
-export function TerminalInput({
+export const TerminalInput = forwardRef<TerminalInputHandle, TerminalInputProps>(function TerminalInput({
   onSendInput,
   onSendControl,
   disabled,
-}: TerminalInputProps) {
+}, ref) {
+  const nativeRef = useRef<HTMLInputElement>(null);
+
+  useImperativeHandle(ref, () => ({
+    focus: () => nativeRef.current?.focus(),
+    appendText: (text: string) => {
+      setInput((prev) => prev + text);
+      nativeRef.current?.focus();
+    },
+  }));
   const [input, setInput] = useState("");
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -57,6 +71,7 @@ export function TerminalInput({
   return (
     <div className="terminal-input">
       <input
+        ref={nativeRef}
         type="text"
         value={input}
         onChange={(e) => setInput(e.target.value)}
@@ -104,4 +119,4 @@ export function TerminalInput({
       </div>
     </div>
   );
-}
+});

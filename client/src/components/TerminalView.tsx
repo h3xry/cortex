@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTerminal } from "../hooks/useTerminal";
-import { TerminalInput } from "./TerminalInput";
+import { TerminalInput, type TerminalInputHandle } from "./TerminalInput";
 import "@xterm/xterm/css/xterm.css";
 
 interface TerminalViewProps {
@@ -17,6 +17,28 @@ export function TerminalView({
   const { terminalRef, sendInput, sendControl, isUserScrolling, scrollToBottom, forceResize, connectionState, reconnect } =
     useTerminal(sessionId);
   const [showInput, setShowInput] = useState(true);
+  const inputRef = useRef<TerminalInputHandle>(null);
+
+  // Auto-focus input when user starts typing anywhere in terminal view
+  // Uses capture phase to intercept BEFORE xterm.js processes the key
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (!showInput || sessionEnded) return;
+      // If OUR input is already focused, let native behavior handle it
+      // (xterm.js uses its own textarea internally — don't skip for that)
+      const active = document.activeElement;
+      if (active?.classList.contains("terminal-input-field")) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      // Printable character: append to input and focus, block xterm from processing
+      if (e.key.length === 1) {
+        e.preventDefault();
+        e.stopPropagation();
+        inputRef.current?.appendText(e.key);
+      }
+    };
+    document.addEventListener("keydown", onKeyDown, true);
+    return () => document.removeEventListener("keydown", onKeyDown, true);
+  }, [showInput, sessionEnded]);
 
   return (
     <div className="terminal-view">
@@ -64,6 +86,7 @@ export function TerminalView({
       )}
       {showInput && (
         <TerminalInput
+          ref={inputRef}
           onSendInput={sendInput}
           onSendControl={sendControl}
           disabled={sessionEnded}
