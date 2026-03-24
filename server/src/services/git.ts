@@ -42,7 +42,7 @@ export async function getStatus(projectPath: string): Promise<GitChange[]> {
     for (const line of stdout.trim().split("\n")) {
       if (!line) continue;
       const statusCode = line.substring(0, 2).trim();
-      const filePath = line.substring(3).trim();
+      const filePath = line.substring(2).trimStart();
 
       let status: GitChangeStatus;
       switch (statusCode) {
