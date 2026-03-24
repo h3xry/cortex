@@ -55,12 +55,8 @@ function handleConnection(ws: WebSocket, sessionId: string, readonly = false): v
     return;
   }
 
-  // Send current screen immediately so user sees something right away
-  tmux.capturePaneOutput(session.tmuxSessionName, 0).then((screen) => {
-    if (screen && ws.readyState === WebSocket.OPEN) {
-      sendMessage(ws, { type: "output", data: screen });
-    }
-  }).catch(() => {});
+  // Don't send capture-pane here — wait for resize from client first.
+  // Capture at wrong size = garbled output.
 
   // Stream live output
   const removeListener = sessionManager.addOutputListener(
@@ -129,25 +125,16 @@ function handleConnection(ws: WebSocket, sessionId: string, readonly = false): v
         await tmux.sendKeys(session.tmuxSessionName, msg.key);
       } else if (msg.type === "resize" && msg.cols > 0 && msg.rows > 0) {
         await tmux.resizeWindow(session.tmuxSessionName, msg.cols, msg.rows);
-        // Capture current screen at new size and send immediately
-        // Small delay to let tmux re-render at new size
+        // Send a space then backspace to force Claude Code to re-render
+        // This triggers pipe-pane to capture fresh output at new size
         setTimeout(async () => {
           try {
-            const screen = await tmux.capturePaneOutput(
-              session.tmuxSessionName,
-              0,
-            );
-            if (screen && ws.readyState === WebSocket.OPEN) {
-              // Clear xterm and write fresh screen
-              sendMessage(ws, {
-                type: "output",
-                data: "\x1b[2J\x1b[H" + screen,
-              });
-            }
+            await tmux.sendKeys(session.tmuxSessionName, " ");
+            await tmux.sendKeys(session.tmuxSessionName, "BSpace");
           } catch {
             // ignore
           }
-        }, 100);
+        }, 200);
       }
     } catch (err) {
       console.error(`Send keys error for session ${sessionId}:`, err);
