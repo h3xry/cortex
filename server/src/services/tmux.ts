@@ -168,10 +168,22 @@ export function getPipeFilePath(sessionName: string): string {
   return path.join(PIPE_DIR, `${sessionName}.log`);
 }
 
+export async function stopPipePane(sessionName: string): Promise<void> {
+  validateSessionName(sessionName);
+  try {
+    // Calling pipe-pane without a command stops any existing pipe
+    await execFileAsync("tmux", ["pipe-pane", "-t", sessionName]);
+  } catch {
+    // ignore — no pipe may be active
+  }
+}
+
 export async function startPipePane(sessionName: string): Promise<void> {
   validateSessionName(sessionName);
   const filePath = getPipeFilePath(sessionName);
-  // pipe-pane sends raw PTY output to a file
+  // Stop any existing pipe first
+  await stopPipePane(sessionName);
+  // Start fresh pipe-pane
   await execFileAsync("tmux", [
     "pipe-pane",
     "-t",
