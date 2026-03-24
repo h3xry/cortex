@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useTerminal } from "../hooks/useTerminal";
 import { TerminalInput } from "./TerminalInput";
 import "@xterm/xterm/css/xterm.css";
@@ -13,14 +14,31 @@ export function TerminalView({
   folderPath,
   sessionEnded,
 }: TerminalViewProps) {
-  const { terminalRef, sendInput, sendControl, isUserScrolling, scrollToBottom } =
+  const { terminalRef, sendInput, sendControl, isUserScrolling, scrollToBottom, forceResize } =
     useTerminal(sessionId);
+  const [showInput, setShowInput] = useState(true);
 
   return (
     <div className="terminal-view">
       <div className="terminal-header">
         <span className="terminal-title">{folderPath}</span>
-        <span className="terminal-session-id">ID: {sessionId}</span>
+        <div className="terminal-header-actions">
+          <button
+            className="terminal-mode-button"
+            onClick={forceResize}
+            title="Refresh terminal (resize tmux)"
+          >
+            ↻
+          </button>
+          <button
+            className={`terminal-mode-button ${showInput ? "" : "active"}`}
+            onClick={() => setShowInput(!showInput)}
+            title={showInput ? "Read mode" : "Input mode"}
+          >
+            {showInput ? "👁" : "⌨"}
+          </button>
+          <span className="terminal-session-id">{sessionId}</span>
+        </div>
       </div>
       <div className="terminal-container" ref={terminalRef} />
       {isUserScrolling && (
@@ -31,11 +49,13 @@ export function TerminalView({
           ↓ Latest
         </button>
       )}
-      <TerminalInput
-        onSendInput={sendInput}
-        onSendControl={sendControl}
-        disabled={sessionEnded}
-      />
+      {showInput && (
+        <TerminalInput
+          onSendInput={sendInput}
+          onSendControl={sendControl}
+          disabled={sessionEnded}
+        />
+      )}
     </div>
   );
 }

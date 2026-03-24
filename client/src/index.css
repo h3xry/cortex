@@ -666,6 +666,22 @@ body {
   gap: 8px;
 }
 
+.continue-button-small {
+  padding: 6px 14px;
+  border: 1px solid #a6e3a1;
+  border-radius: 4px;
+  background: none;
+  color: #a6e3a1;
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.continue-button-small:hover {
+  background: #a6e3a1;
+  color: #1e1e2e;
+}
+
 .launch-button-small {
   padding: 6px 14px;
   border: none;
@@ -1348,8 +1364,35 @@ body {
   color: #a6adc8;
 }
 
+.terminal-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.terminal-mode-button {
+  padding: 4px 8px;
+  border: 1px solid #313244;
+  border-radius: 4px;
+  background: none;
+  color: #a6adc8;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.terminal-mode-button:hover {
+  border-color: #89b4fa;
+}
+
+.terminal-mode-button.active {
+  background: #89b4fa;
+  color: #1e1e2e;
+  border-color: #89b4fa;
+}
+
 .terminal-session-id {
   color: #6c7086;
+  font-size: 12px;
 }
 
 .terminal-container {

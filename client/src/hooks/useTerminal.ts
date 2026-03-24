@@ -7,6 +7,7 @@ export function useTerminal(sessionId: string) {
   const terminalRef = useRef<HTMLDivElement | null>(null);
   const termRef = useRef<Terminal | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
+  const fitAddonRef = useRef<FitAddon | null>(null);
   const userScrollingRef = useRef(false);
   const [isUserScrolling, setIsUserScrolling] = useState(false);
 
@@ -29,6 +30,7 @@ export function useTerminal(sessionId: string) {
     term.open(terminalRef.current);
     fitAddon.fit();
     termRef.current = term;
+    fitAddonRef.current = fitAddon;
 
     // Track if user has scrolled away from bottom
     let writingData = false; // flag to ignore scroll events caused by term.write
@@ -234,5 +236,13 @@ export function useTerminal(sessionId: string) {
     setIsUserScrolling(false);
   }, []);
 
-  return { terminalRef, sendInput, sendControl, isUserScrolling, scrollToBottom };
+  const forceResize = useCallback(() => {
+    if (fitAddonRef.current && termRef.current && wsRef.current?.readyState === WebSocket.OPEN) {
+      fitAddonRef.current.fit();
+      const { cols, rows } = termRef.current;
+      wsRef.current.send(JSON.stringify({ type: "resize", cols, rows }));
+    }
+  }, []);
+
+  return { terminalRef, sendInput, sendControl, isUserScrolling, scrollToBottom, forceResize };
 }
