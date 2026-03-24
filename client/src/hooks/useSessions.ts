@@ -29,9 +29,11 @@ export function useSessions() {
     async (
       folderPath: string,
       allowedTools?: string[],
+      continueConversation?: boolean,
     ): Promise<Session> => {
       const body: Record<string, unknown> = { folderPath };
       if (allowedTools) body.allowedTools = allowedTools;
+      if (continueConversation) body.continueConversation = true;
 
       const res = await fetch("/api/sessions", {
         method: "POST",

@@ -26,6 +26,7 @@ interface SessionEntry {
   statusInterval: ReturnType<typeof setInterval> | null;
   tailRestartCount: number;
   tailLastRestartAt: number;
+  failedChecks: number;
 }
 
 const sessions = new Map<string, SessionEntry>();
@@ -65,6 +66,7 @@ export async function reconnectSessions(): Promise<number> {
       statusInterval: null,
       tailRestartCount: 0,
       tailLastRestartAt: 0,
+      failedChecks: 0,
     };
 
     sessions.set(id, entry);
@@ -137,6 +139,7 @@ export async function createSession(
     statusInterval: null,
     tailRestartCount: 0,
     tailLastRestartAt: 0,
+    failedChecks: 0,
   };
 
   sessions.set(id, entry);
@@ -258,15 +261,29 @@ function startOutputStream(entry: SessionEntry): void {
     });
   });
 
-  // Poll for session liveness
+  // Poll for session liveness (require 3 consecutive failures before marking ended)
   entry.statusInterval = setInterval(async () => {
     try {
       const alive = await tmux.hasSession(entry.session.tmuxSessionName);
-      if (!alive) {
-        updateStatus(entry, "ended");
+      if (alive) {
+        entry.failedChecks = 0;
+      } else {
+        entry.failedChecks++;
+        if (entry.failedChecks >= 3) {
+          console.log(`[session ${entry.session.id}] tmux session gone after ${entry.failedChecks} consecutive checks, marking ended`);
+          updateStatus(entry, "ended");
+        } else {
+          console.log(`[session ${entry.session.id}] has-session check failed (${entry.failedChecks}/3), will retry`);
+        }
       }
     } catch {
-      updateStatus(entry, "ended");
+      entry.failedChecks++;
+      if (entry.failedChecks >= 3) {
+        console.log(`[session ${entry.session.id}] has-session check errored ${entry.failedChecks} times, marking ended`);
+        updateStatus(entry, "ended");
+      } else {
+        console.log(`[session ${entry.session.id}] has-session check error (${entry.failedChecks}/3), will retry`);
+      }
     }
   }, 2000);
 }

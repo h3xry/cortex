@@ -3,13 +3,21 @@ import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import type { WsMessage, WsClientMessage } from "../types";
 
+export type ConnectionState = "connected" | "reconnecting" | "failed";
+
+const MAX_RECONNECT_RETRIES = 5;
+const BACKOFF_BASE_MS = 1000;
+const BACKOFF_MAX_MS = 10_000;
+
 export function useTerminal(sessionId: string) {
   const terminalRef = useRef<HTMLDivElement | null>(null);
   const termRef = useRef<Terminal | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
   const userScrollingRef = useRef(false);
+  const reconnectRef = useRef<(() => void) | null>(null);
   const [isUserScrolling, setIsUserScrolling] = useState(false);
+  const [connectionState, setConnectionState] = useState<ConnectionState>("connected");
 
   useEffect(() => {
     if (!terminalRef.current) return;
@@ -119,72 +127,118 @@ export function useTerminal(sessionId: string) {
       };
     }
 
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${protocol}//${window.location.host}/stream/sessions/${sessionId}`;
-    const ws = new WebSocket(wsUrl);
-    wsRef.current = ws;
+    // --- WebSocket connection with reconnect logic ---
+    let intentionalClose = false;
+    let retryCount = 0;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    let sessionEnded = false;
+    let isReconnect = false;
 
-    ws.onopen = () => {
-      console.log(`[WS] Connected to session ${sessionId}`);
-      // Sync tmux size with xterm on connect
-      fitAddon.fit();
-      const { cols, rows } = term;
-      ws.send(JSON.stringify({ type: "resize", cols, rows }));
-    };
-
-    ws.onerror = (event) => {
-      console.error(`[WS] Error for session ${sessionId}:`, event);
-      term.write("\r\n\x1b[31mWebSocket connection error\x1b[0m\r\n");
-    };
-
-    ws.onclose = (event) => {
-      console.log(`[WS] Closed for session ${sessionId}: code=${event.code}`);
-    };
-
-    ws.onmessage = (event) => {
-      let msg: WsMessage;
-      try {
-        msg = JSON.parse(event.data);
-      } catch {
-        return;
+    const writeWithoutAutoScroll = (data: string) => {
+      writingData = true;
+      if (userScrollingRef.current && viewport) {
+        const savedScroll = viewport.scrollTop;
+        term.write(data, () => {
+          viewport.scrollTop = savedScroll;
+          writingData = false;
+        });
+      } else {
+        term.write(data, () => {
+          writingData = false;
+        });
       }
-      // Write data, then restore scroll position if user is scrolling
-      const writeWithoutAutoScroll = (data: string) => {
-        writingData = true;
-        if (userScrollingRef.current && viewport) {
-          const savedScroll = viewport.scrollTop;
-          term.write(data, () => {
-            viewport.scrollTop = savedScroll;
-            writingData = false;
-          });
+    };
+
+    // Register onResize once — uses wsRef to always reference the current WS
+    term.onResize(({ cols, rows }) => {
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({ type: "resize", cols, rows }));
+      }
+    });
+
+    const connectWs = () => {
+      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      const wsUrl = `${protocol}//${window.location.host}/stream/sessions/${sessionId}`;
+      const ws = new WebSocket(wsUrl);
+      wsRef.current = ws;
+
+      ws.onopen = () => {
+        console.log(`[WS] Connected to session ${sessionId}`);
+        // Clear terminal on reconnect — server sends fresh buffer
+        if (isReconnect) {
+          term.clear();
+        }
+        retryCount = 0;
+        setConnectionState("connected");
+        // Sync tmux size with xterm on connect
+        fitAddon.fit();
+        const { cols, rows } = term;
+        ws.send(JSON.stringify({ type: "resize", cols, rows }));
+      };
+
+      ws.onerror = (event) => {
+        console.error(`[WS] Error for session ${sessionId}:`, event);
+      };
+
+      ws.onclose = (event) => {
+        console.log(`[WS] Closed for session ${sessionId}: code=${event.code}`);
+        wsRef.current = null;
+
+        if (intentionalClose || sessionEnded) return;
+
+        // Attempt reconnect with exponential backoff
+        retryCount++;
+        if (retryCount <= MAX_RECONNECT_RETRIES) {
+          const delay = Math.min(BACKOFF_BASE_MS * Math.pow(2, retryCount - 1), BACKOFF_MAX_MS);
+          console.log(`[WS] Reconnecting in ${delay}ms (attempt ${retryCount}/${MAX_RECONNECT_RETRIES})`);
+          setConnectionState("reconnecting");
+          reconnectTimer = setTimeout(() => {
+            if (intentionalClose) return;
+            isReconnect = true;
+            connectWs();
+          }, delay);
         } else {
-          term.write(data, () => {
-            writingData = false;
-          });
+          console.log(`[WS] Max retries reached for session ${sessionId}`);
+          setConnectionState("failed");
         }
       };
 
-      switch (msg.type) {
-        case "output":
-          writeWithoutAutoScroll(msg.data);
-          break;
-        case "status":
-          if (msg.status === "ended") {
-            writeWithoutAutoScroll("\r\n\x1b[90m--- Session ended ---\x1b[0m\r\n");
-          }
-          break;
-        case "error":
-          writeWithoutAutoScroll(`\r\n\x1b[31mError: ${msg.message}\x1b[0m\r\n`);
-          break;
-      }
+      ws.onmessage = (event) => {
+        let msg: WsMessage;
+        try {
+          msg = JSON.parse(event.data);
+        } catch {
+          return;
+        }
+
+        switch (msg.type) {
+          case "output":
+            writeWithoutAutoScroll(msg.data);
+            break;
+          case "status":
+            if (msg.status === "ended") {
+              sessionEnded = true;
+              writeWithoutAutoScroll("\r\n\x1b[90m--- Session ended ---\x1b[0m\r\n");
+            }
+            break;
+          case "error":
+            writeWithoutAutoScroll(`\r\n\x1b[31mError: ${msg.message}\x1b[0m\r\n`);
+            break;
+        }
+      };
     };
 
-    // Send resize to tmux when terminal size changes
-    term.onResize(({ cols, rows }) => {
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ type: "resize", cols, rows }));
-      }
-    });
+    // Expose manual reconnect for retry button
+    reconnectRef.current = () => {
+      if (intentionalClose || sessionEnded) return;
+      retryCount = 0;
+      isReconnect = true;
+      setConnectionState("reconnecting");
+      connectWs();
+    };
+
+    // Initial connection
+    connectWs();
 
     const handleResize = () => fitAddon.fit();
     window.addEventListener("resize", handleResize);
@@ -201,11 +255,17 @@ export function useTerminal(sessionId: string) {
     }, 100);
 
     return () => {
+      intentionalClose = true;
+      reconnectRef.current = null;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
       touchCleanup?.();
       viewport?.removeEventListener("scroll", onViewportScroll);
       window.removeEventListener("resize", handleResize);
       resizeObserver.disconnect();
-      ws.close();
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
+      }
       term.dispose();
     };
   }, [sessionId]);
@@ -244,5 +304,9 @@ export function useTerminal(sessionId: string) {
     }
   }, []);
 
-  return { terminalRef, sendInput, sendControl, isUserScrolling, scrollToBottom, forceResize };
+  const reconnect = useCallback(() => {
+    reconnectRef.current?.();
+  }, []);
+
+  return { terminalRef, sendInput, sendControl, isUserScrolling, scrollToBottom, forceResize, connectionState, reconnect };
 }

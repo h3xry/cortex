@@ -1482,6 +1482,51 @@ body {
   color: #1e1e2e;
 }
 
+/* Connection overlay */
+.terminal-connection-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 25;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.terminal-reconnecting {
+  background: rgba(249, 226, 175, 0.15);
+  border: 1px solid #f9e2af;
+  color: #f9e2af;
+}
+
+.terminal-failed {
+  background: rgba(243, 139, 168, 0.15);
+  border: 1px solid #f38ba8;
+  color: #f38ba8;
+}
+
+.terminal-retry-button {
+  padding: 4px 16px;
+  border: 1px solid #f38ba8;
+  border-radius: 4px;
+  background: transparent;
+  color: #f38ba8;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.terminal-retry-button:hover {
+  background: #f38ba8;
+  color: #1e1e2e;
+}
+
 /* Terminal Input */
 .terminal-input {
   display: flex;

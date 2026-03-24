@@ -14,7 +14,7 @@ export function TerminalView({
   folderPath,
   sessionEnded,
 }: TerminalViewProps) {
-  const { terminalRef, sendInput, sendControl, isUserScrolling, scrollToBottom, forceResize } =
+  const { terminalRef, sendInput, sendControl, isUserScrolling, scrollToBottom, forceResize, connectionState, reconnect } =
     useTerminal(sessionId);
   const [showInput, setShowInput] = useState(true);
 
@@ -41,6 +41,19 @@ export function TerminalView({
         </div>
       </div>
       <div className="terminal-container" ref={terminalRef} />
+      {connectionState === "reconnecting" && (
+        <div className="terminal-connection-overlay terminal-reconnecting">
+          Reconnecting...
+        </div>
+      )}
+      {connectionState === "failed" && (
+        <div className="terminal-connection-overlay terminal-failed">
+          Connection lost
+          <button className="terminal-retry-button" onClick={reconnect}>
+            Retry
+          </button>
+        </div>
+      )}
       {isUserScrolling && (
         <button
           className="terminal-scroll-bottom"

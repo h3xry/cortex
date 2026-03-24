@@ -55,8 +55,12 @@ function handleConnection(ws: WebSocket, sessionId: string, readonly = false): v
     return;
   }
 
-  // Don't send capture-pane here — wait for resize from client first.
-  // Capture at wrong size = garbled output.
+  // Send buffered output so client sees terminal history immediately on connect.
+  // This is raw PTY data (not capture-pane), so xterm.js reflows it at any width.
+  const buffer = sessionManager.getOutputBuffer(sessionId);
+  if (buffer) {
+    sendMessage(ws, { type: "output", data: buffer });
+  }
 
   // Stream live output
   const removeListener = sessionManager.addOutputListener(
