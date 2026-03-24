@@ -47,12 +47,6 @@ function handleConnection(ws: WebSocket, sessionId: string, readonly = false): v
     return;
   }
 
-  // Send buffered output
-  const buffer = sessionManager.getOutputBuffer(sessionId);
-  if (buffer) {
-    sendMessage(ws, { type: "output", data: buffer });
-  }
-
   // Send current status
   sendMessage(ws, { type: "status", status: session.status });
 
@@ -61,7 +55,14 @@ function handleConnection(ws: WebSocket, sessionId: string, readonly = false): v
     return;
   }
 
-  // Stream new output
+  // Send current screen immediately so user sees something right away
+  tmux.capturePaneOutput(session.tmuxSessionName, 0).then((screen) => {
+    if (screen && ws.readyState === WebSocket.OPEN) {
+      sendMessage(ws, { type: "output", data: screen });
+    }
+  }).catch(() => {});
+
+  // Stream live output
   const removeListener = sessionManager.addOutputListener(
     sessionId,
     (data) => {
@@ -128,6 +129,25 @@ function handleConnection(ws: WebSocket, sessionId: string, readonly = false): v
         await tmux.sendKeys(session.tmuxSessionName, msg.key);
       } else if (msg.type === "resize" && msg.cols > 0 && msg.rows > 0) {
         await tmux.resizeWindow(session.tmuxSessionName, msg.cols, msg.rows);
+        // Capture current screen at new size and send immediately
+        // Small delay to let tmux re-render at new size
+        setTimeout(async () => {
+          try {
+            const screen = await tmux.capturePaneOutput(
+              session.tmuxSessionName,
+              0,
+            );
+            if (screen && ws.readyState === WebSocket.OPEN) {
+              // Clear xterm and write fresh screen
+              sendMessage(ws, {
+                type: "output",
+                data: "\x1b[2J\x1b[H" + screen,
+              });
+            }
+          } catch {
+            // ignore
+          }
+        }, 100);
       }
     } catch (err) {
       console.error(`Send keys error for session ${sessionId}:`, err);

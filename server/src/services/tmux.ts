@@ -48,6 +48,28 @@ export async function resizeWindow(
   ]);
 }
 
+export async function forceRedraw(sessionName: string): Promise<void> {
+  validateSessionName(sessionName);
+  // Send SIGWINCH to the pane process to force terminal redraw
+  try {
+    await execFileAsync("tmux", [
+      "send-keys",
+      "-t",
+      sessionName,
+      "",
+      "",
+    ]);
+    // Also do a select-pane to trigger refresh
+    await execFileAsync("tmux", [
+      "select-pane",
+      "-t",
+      sessionName,
+    ]);
+  } catch {
+    // ignore
+  }
+}
+
 export async function sendKeys(
   sessionName: string,
   keys: string,
@@ -62,6 +84,36 @@ export async function killSession(sessionName: string): Promise<void> {
     await execFileAsync("tmux", ["kill-session", "-t", sessionName]);
   } catch {
     // Session may already be dead
+  }
+}
+
+export interface TmuxSessionInfo {
+  name: string;
+  createdAt: string;
+  paneCurrentPath: string;
+}
+
+export async function listSessionsDetailed(): Promise<TmuxSessionInfo[]> {
+  try {
+    const { stdout } = await execFileAsync("tmux", [
+      "list-sessions",
+      "-F",
+      "#{session_name}\t#{session_created}\t#{pane_current_path}",
+    ]);
+    return stdout
+      .trim()
+      .split("\n")
+      .filter(Boolean)
+      .map((line) => {
+        const [name, created, panePath] = line.split("\t");
+        return {
+          name,
+          createdAt: new Date(parseInt(created, 10) * 1000).toISOString(),
+          paneCurrentPath: panePath || "",
+        };
+      });
+  } catch {
+    return [];
   }
 }
 

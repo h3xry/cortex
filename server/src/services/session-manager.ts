@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { stat, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { StringDecoder } from "node:string_decoder";
 import type { ChildProcess } from "node:child_process";
 import type { Session, SessionStatus } from "../types.js";
 import {
@@ -29,6 +30,62 @@ interface SessionEntry {
 
 const sessions = new Map<string, SessionEntry>();
 
+/**
+ * Reconnect existing tmux cc-* sessions on server startup.
+ * Scans tmux for sessions with "cc-" prefix and re-registers them.
+ */
+export async function reconnectSessions(): Promise<number> {
+  const tmuxSessions = await tmux.listSessionsDetailed();
+  const ccSessions = tmuxSessions.filter((s) => s.name.startsWith("cc-"));
+  let reconnected = 0;
+
+  for (const ts of ccSessions) {
+    const id = ts.name.replace("cc-", "");
+
+    // Skip if already in memory
+    if (sessions.has(id)) continue;
+
+    const folderPath = ts.paneCurrentPath || "/unknown";
+
+    const session: Session = {
+      id,
+      tmuxSessionName: ts.name,
+      folderPath,
+      status: "running",
+      allowedTools: [],
+      createdAt: ts.createdAt,
+      endedAt: null,
+    };
+
+    const entry: SessionEntry = {
+      session,
+      outputBuffer: "",
+      listeners: new Set(),
+      tailProcess: null,
+      statusInterval: null,
+      tailRestartCount: 0,
+      tailLastRestartAt: 0,
+    };
+
+    sessions.set(id, entry);
+
+    // Re-setup pipe-pane + tail for this session
+    try {
+      const logFile = tmux.getPipeFilePath(ts.name);
+      await writeFile(logFile, "");
+      await tmux.startPipePane(ts.name);
+      startOutputStream(entry);
+      reconnected++;
+      console.log(`[reconnect] Restored session ${id} (${folderPath})`);
+    } catch (err) {
+      console.error(`[reconnect] Failed to restore session ${id}:`, err);
+      updateStatus(entry, "ended");
+    }
+  }
+
+  return reconnected;
+}
+
 export async function validateFolderPath(folderPath: string): Promise<string> {
   const resolved = path.resolve(folderPath);
 
@@ -49,6 +106,7 @@ export async function validateFolderPath(folderPath: string): Promise<string> {
 export async function createSession(
   folderPath: string,
   allowedTools: string[] = [],
+  continueConversation = false,
 ): Promise<Session> {
   const activeSessions = Array.from(sessions.values()).filter(
     (e) => e.session.status !== "ended",
@@ -89,6 +147,9 @@ export async function createSession(
     await writeFile(logFile, "");
 
     let command = "claude --dangerously-skip-permissions";
+    if (continueConversation) {
+      command += " --continue";
+    }
     if (allowedTools.length > 0) {
       const toolsArg = allowedTools.join(",");
       command += ` --allowedTools "${toolsArg}"`;
@@ -138,10 +199,11 @@ async function waitForPipePane(logFile: string, timeoutMs = 2000): Promise<void>
 
 function startOutputStream(entry: SessionEntry): void {
   const logFile = tmux.getPipeFilePath(entry.session.tmuxSessionName);
+  const decoder = new StringDecoder("utf8");
 
   // Tail the log file to get raw PTY output
   const child = tmux.tailFile(logFile, (data: Buffer) => {
-    const text = data.toString();
+    const text = decoder.write(data);
     appendOutput(entry, text);
     for (const listener of entry.listeners) {
       try {

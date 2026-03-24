@@ -10,6 +10,7 @@ import { projectFilesRouter } from "./routes/project-files.js";
 import { privateRouter } from "./routes/private.js";
 import { handleWebSocketUpgrade } from "./ws/terminal.js";
 import { ALLOWED_ORIGINS, PORT } from "./config.js";
+import { reconnectSessions } from "./services/session-manager.js";
 
 const app = express();
 const server = createServer(app);
@@ -27,6 +28,10 @@ app.use("/api/private", privateRouter);
 
 handleWebSocketUpgrade(server);
 
-server.listen(PORT, () => {
+server.listen(PORT, async () => {
   console.log(`Server running on http://localhost:${PORT}`);
+  const count = await reconnectSessions();
+  if (count > 0) {
+    console.log(`Reconnected ${count} existing tmux sessions`);
+  }
 });
