@@ -3183,3 +3183,15 @@ body {
   cursor: pointer;
   font-weight: 600;
 }
+
+.group-form-private {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: #bac2de;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.group-form-private input { cursor: pointer; }

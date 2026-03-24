@@ -16,11 +16,8 @@ interface ProjectGroupProps {
   projects: Project[];
   sessions: Session[];
   selectedProjectId: string | null;
-  unlocked: boolean;
   onSelectProject: (project: Project) => void;
   onRemoveProject: (id: string) => void;
-  onSetPrivate: (project: Project) => void;
-  onRemovePrivate: (project: Project) => void;
   onEditGroup: () => void;
   onDeleteGroup: () => void;
   onMoveProject: (projectId: string, groupId: string | null) => void;

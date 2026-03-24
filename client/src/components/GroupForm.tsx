@@ -14,7 +14,7 @@ const EMOJI_GRID = [
 
 interface GroupFormProps {
   group?: Group | null;
-  onSave: (data: { name: string; icon: string; color: string }) => void;
+  onSave: (data: { name: string; icon: string; color: string; isPrivate: boolean }) => void;
   onCancel: () => void;
 }
 
@@ -22,11 +22,12 @@ export function GroupForm({ group, onSave, onCancel }: GroupFormProps) {
   const [name, setName] = useState(group?.name ?? "");
   const [icon, setIcon] = useState(group?.icon ?? "📁");
   const [color, setColor] = useState(group?.color ?? COLOR_PALETTE[5]);
+  const [isPrivate, setIsPrivate] = useState(group?.isPrivate ?? false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
-    onSave({ name: name.trim(), icon, color });
+    onSave({ name: name.trim(), icon, color, isPrivate });
   };
 
   return (
@@ -76,9 +77,18 @@ export function GroupForm({ group, onSave, onCancel }: GroupFormProps) {
           </div>
         </div>
 
+        <label className="group-form-private">
+          <input
+            type="checkbox"
+            checked={isPrivate}
+            onChange={(e) => setIsPrivate(e.target.checked)}
+          />
+          Private Group (hidden when locked)
+        </label>
+
         <div className="group-form-preview">
           <span style={{ borderLeft: `3px solid ${color}`, paddingLeft: 8 }}>
-            {icon} {name || "Group Name"}
+            {icon} {name || "Group Name"} {isPrivate ? "🔒" : ""}
           </span>
         </div>
 

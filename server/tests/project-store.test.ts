@@ -96,26 +96,26 @@ describe("project-store", () => {
     });
   });
 
-  describe("setPrivate", () => {
-    it("should set project as private", async () => {
+  describe("setGroupId", () => {
+    it("should set project groupId", async () => {
       const store = await loadModule();
       const added = await store.addProject("/tmp/myproject");
-      expect(added.isPrivate).toBe(false);
-      const updated = await store.setPrivate(added.id, true);
-      expect(updated.isPrivate).toBe(true);
+      expect(added.groupId).toBeNull();
+      const updated = await store.setGroupId(added.id, "g1");
+      expect(updated.groupId).toBe("g1");
     });
 
-    it("should set project back to public", async () => {
+    it("should remove groupId", async () => {
       const store = await loadModule();
       const added = await store.addProject("/tmp/myproject");
-      await store.setPrivate(added.id, true);
-      const updated = await store.setPrivate(added.id, false);
-      expect(updated.isPrivate).toBe(false);
+      await store.setGroupId(added.id, "g1");
+      const updated = await store.setGroupId(added.id, null);
+      expect(updated.groupId).toBeNull();
     });
 
     it("should throw for unknown project", async () => {
       const store = await loadModule();
-      await expect(store.setPrivate("nonexistent", true)).rejects.toThrow(
+      await expect(store.setGroupId("nonexistent", "g1")).rejects.toThrow(
         "Project not found",
       );
     });

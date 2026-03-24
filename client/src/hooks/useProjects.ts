@@ -58,40 +58,6 @@ export function useProjects() {
     [fetchProjects],
   );
 
-  const setupPassword = useCallback(async (password: string) => {
-    const res = await fetch("/api/private/setup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password }),
-    });
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      throw new Error(data.error ?? "Failed to set password");
-    }
-    setHasGlobalPassword(true);
-  }, []);
-
-  const setProjectPrivate = useCallback(
-    async (id: string, isPrivate: boolean, password: string) => {
-      // If no global password yet, set it first
-      if (!hasGlobalPassword) {
-        await setupPassword(password);
-      }
-
-      const res = await fetch(`/api/projects/${id}/private`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-        body: JSON.stringify({ isPrivate, password }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error ?? "Failed to update privacy");
-      }
-      await fetchProjects();
-    },
-    [fetchProjects, hasGlobalPassword, setupPassword],
-  );
-
   const unlock = useCallback(
     async (password: string) => {
       const res = await fetch("/api/private/unlock", {
@@ -124,8 +90,6 @@ export function useProjects() {
     await fetchProjects();
   }, [fetchProjects]);
 
-  const hasPrivateProjects = hasGlobalPassword;
-
   useEffect(() => {
     fetchProjects();
     fetchPrivateStatus();
@@ -136,10 +100,8 @@ export function useProjects() {
     error,
     unlocked,
     hasGlobalPassword,
-    hasPrivateProjects,
     addProject,
     removeProject,
-    setProjectPrivate,
     unlock,
     lock,
     fetchProjects,

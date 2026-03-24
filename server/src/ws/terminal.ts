@@ -2,6 +2,7 @@ import { WebSocketServer, WebSocket } from "ws";
 import type { Server } from "node:http";
 import * as sessionManager from "../services/session-manager.js";
 import * as projectStore from "../services/project-store.js";
+import * as groupStore from "../services/group-store.js";
 import { isValidToken } from "../services/unlock-store.js";
 import { ALLOWED_ORIGINS, PORT } from "../config.js";
 import type { WsMessage, WsClientMessage } from "../types.js";
@@ -34,16 +35,20 @@ export function handleWebSocketUpgrade(server: Server): void {
     const readonly = url.searchParams.get("readonly") === "1";
     const token = url.searchParams.get("token");
 
-    // Check if session belongs to a private project
+    // Check if session belongs to a project in a private group
     const sessionId = match[1];
     const session = sessionManager.getSession(sessionId);
     if (session) {
-      const privatePaths = await projectStore.getPrivateProjectPaths();
-      if (privatePaths.has(session.folderPath)) {
-        if (!token || !isValidToken(token)) {
-          console.log(`[WS] REJECTED: private session ${sessionId}, no valid token`);
-          socket.destroy();
-          return;
+      const privateGroupIds = await groupStore.getPrivateGroupIds();
+      if (privateGroupIds.size > 0) {
+        const allProjects = await projectStore.listProjects();
+        const proj = allProjects.find((p) => p.path === session.folderPath);
+        if (proj?.groupId && privateGroupIds.has(proj.groupId)) {
+          if (!token || !isValidToken(token)) {
+            console.log(`[WS] REJECTED: private group session ${sessionId}, no valid token`);
+            socket.destroy();
+            return;
+          }
         }
       }
     }

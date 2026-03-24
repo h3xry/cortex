@@ -19,6 +19,10 @@ vi.mock("../src/services/unlock-store.js", () => ({
   isUnlockedHeader: vi.fn().mockReturnValue(true),
 }));
 
+vi.mock("../src/services/group-store.js", () => ({
+  getPrivateGroupIds: vi.fn().mockResolvedValue(new Set()),
+}));
+
 import * as projectStore from "../src/services/project-store.js";
 import * as noteStore from "../src/services/note-store.js";
 import * as unlockStore from "../src/services/unlock-store.js";
@@ -31,8 +35,12 @@ const mockUpdateNote = vi.mocked(noteStore.updateNote);
 const mockDeleteNote = vi.mocked(noteStore.deleteNote);
 const mockIsUnlocked = vi.mocked(unlockStore.isUnlockedHeader);
 
-const PROJECT = { id: "proj1", name: "test", path: "/tmp/test", isGitRepo: false, addedAt: "2026-01-01", isPrivate: false };
-const PRIVATE_PROJECT = { ...PROJECT, id: "priv1", isPrivate: true };
+import * as groupStore from "../src/services/group-store.js";
+
+const mockGetPrivateGroupIds = vi.mocked(groupStore.getPrivateGroupIds);
+
+const PROJECT = { id: "proj1", name: "test", path: "/tmp/test", isGitRepo: false, addedAt: "2026-01-01", groupId: null };
+const PRIVATE_GROUP_PROJECT = { ...PROJECT, id: "priv1", groupId: "g-private" };
 
 function createApp() {
   const app = express();
@@ -60,9 +68,10 @@ describe("GET /api/projects/:id/notes", () => {
     expect(res.status).toBe(404);
   });
 
-  it("returns 403 for private project without token", async () => {
-    mockGetProject.mockResolvedValue(PRIVATE_PROJECT);
+  it("returns 403 for project in private group without token", async () => {
+    mockGetProject.mockResolvedValue(PRIVATE_GROUP_PROJECT);
     mockIsUnlocked.mockReturnValue(false);
+    mockGetPrivateGroupIds.mockResolvedValue(new Set(["g-private"]));
     const res = await request(createApp()).get("/api/projects/priv1/notes");
     expect(res.status).toBe(403);
   });

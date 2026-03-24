@@ -3,7 +3,6 @@ import { AddProject } from "./components/AddProject";
 import { ProjectList } from "./components/ProjectList";
 import { ProjectPanel } from "./components/ProjectPanel";
 import { SessionManager } from "./components/SessionManager";
-import { SetPrivateModal } from "./components/SetPrivateModal";
 import { UnlockModal } from "./components/UnlockModal";
 import { useProjects } from "./hooks/useProjects";
 import { useSessions } from "./hooks/useSessions";
@@ -15,12 +14,10 @@ export function App() {
     projects,
     addProject,
     removeProject,
-    setProjectPrivate,
     unlock,
     lock,
     unlocked,
     hasGlobalPassword,
-    hasPrivateProjects,
     fetchProjects,
   } = useProjects();
   const { sessions, deleteSession } = useSessions();
@@ -29,8 +26,6 @@ export function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mainView, setMainView] = useState<"project" | "sessions">("project");
   const [groupFilter, setGroupFilter] = useState<string | null>(null);
-  const [privateTarget, setPrivateTarget] = useState<Project | null>(null);
-  const [removePrivateTarget, setRemovePrivateTarget] = useState<Project | null>(null);
   const [showUnlock, setShowUnlock] = useState(false);
   const [targetSessionId, setTargetSessionId] = useState<string | null>(null);
 
@@ -56,24 +51,10 @@ export function App() {
     }
   };
 
-  const handleSetPrivate = async (password: string) => {
-    if (!privateTarget) return;
-    await setProjectPrivate(privateTarget.id, true, password);
-    if (selectedProject?.id === privateTarget.id) {
-      setSelectedProject(null);
-    }
-    setPrivateTarget(null);
-  };
-
-  const handleRemovePrivate = async (password: string) => {
-    if (!removePrivateTarget) return;
-    await setProjectPrivate(removePrivateTarget.id, false, password);
-    setRemovePrivateTarget(null);
-  };
-
   const handleUnlock = async (password: string) => {
     await unlock(password);
     setShowUnlock(false);
+    groupsState.fetchGroups();
   };
 
   const handleSelectSession = useCallback(
@@ -137,13 +118,10 @@ export function App() {
           projects={projects}
           sessions={sessions}
           selectedProjectId={selectedProject?.id ?? null}
-          unlocked={unlocked}
           groups={groupsState.groups}
           groupFilter={groupFilter}
           onSelect={handleSelectProject}
           onRemove={handleRemoveProject}
-          onSetPrivate={(p) => setPrivateTarget(p)}
-          onRemovePrivate={(p) => setRemovePrivateTarget(p)}
           onCreateGroup={groupsState.createGroup}
           onUpdateGroup={groupsState.updateGroup}
           onDeleteGroup={groupsState.deleteGroup}
@@ -152,16 +130,22 @@ export function App() {
           onSetGroupFilter={setGroupFilter}
         />
 
-        {hasPrivateProjects && (
+        {(hasGlobalPassword || groupsState.groups.some((g) => g.isPrivate)) && (
           <div className="sidebar-unlock">
             {unlocked ? (
-              <button className="unlock-button unlocked" onClick={() => {
-                // Deselect private project before locking
-                if (selectedProject?.isPrivate) {
-                  setSelectedProject(null);
-                  setTargetSessionId(null);
+              <button className="unlock-button unlocked" onClick={async () => {
+                // Deselect project if in a private group
+                if (selectedProject?.groupId) {
+                  const inPrivateGroup = groupsState.groups.some(
+                    (g) => g.id === selectedProject.groupId && g.isPrivate,
+                  );
+                  if (inPrivateGroup) {
+                    setSelectedProject(null);
+                    setTargetSessionId(null);
+                  }
                 }
-                lock();
+                await lock();
+                await groupsState.fetchGroups();
               }}>
                 Unlocked
               </button>
@@ -212,25 +196,6 @@ export function App() {
           </div>
         )}
       </main>
-
-      {privateTarget && (
-        <SetPrivateModal
-          projectName={privateTarget.name}
-          hasGlobalPassword={hasGlobalPassword}
-          onConfirm={handleSetPrivate}
-          onCancel={() => setPrivateTarget(null)}
-        />
-      )}
-
-      {removePrivateTarget && (
-        <UnlockModal
-          onUnlock={handleRemovePrivate}
-          onCancel={() => setRemovePrivateTarget(null)}
-          title="Remove Private"
-          description={`Enter password to make "${removePrivateTarget.name}" public again.`}
-          buttonLabel="Remove Private"
-        />
-      )}
 
       {showUnlock && (
         <UnlockModal

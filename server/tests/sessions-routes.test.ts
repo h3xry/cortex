@@ -20,7 +20,10 @@ vi.mock("../src/services/session-manager.js", () => ({
 vi.mock("../src/services/project-store.js", () => ({
   listProjects: vi.fn().mockResolvedValue([]),
   getProject: vi.fn(),
-  getPrivateProjectPaths: vi.fn().mockResolvedValue(new Set()),
+}));
+
+vi.mock("../src/services/group-store.js", () => ({
+  getPrivateGroupIds: vi.fn().mockResolvedValue(new Set()),
 }));
 
 vi.mock("../src/services/unlock-store.js", () => ({
@@ -33,6 +36,7 @@ vi.mock("../src/services/session-activity.js", () => ({
 
 import * as sessionManager from "../src/services/session-manager.js";
 import * as projectStore from "../src/services/project-store.js";
+import * as groupStore from "../src/services/group-store.js";
 import * as unlockStore from "../src/services/unlock-store.js";
 
 const mockedCreateSession = vi.mocked(sessionManager.createSession);
@@ -42,7 +46,7 @@ const mockedGetSession = vi.mocked(sessionManager.getSession);
 const mockedGetLastOutput = vi.mocked(sessionManager.getLastOutput);
 const mockedRemoveSession = vi.mocked(sessionManager.removeSession);
 const mockedListProjects = vi.mocked(projectStore.listProjects);
-const mockedGetPrivateProjectPaths = vi.mocked(projectStore.getPrivateProjectPaths);
+const mockedGetPrivateGroupIds = vi.mocked(groupStore.getPrivateGroupIds);
 const mockedGetProject = vi.mocked(projectStore.getProject);
 const mockedIsUnlockedHeader = vi.mocked(unlockStore.isUnlockedHeader);
 
@@ -57,7 +61,7 @@ describe("POST /api/sessions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockedIsUnlockedHeader.mockReturnValue(false);
-    mockedGetPrivateProjectPaths.mockResolvedValue(new Set());
+    mockedGetPrivateGroupIds.mockResolvedValue(new Set());
   });
 
   it("should return 201 with session on success", async () => {
@@ -128,7 +132,10 @@ describe("POST /api/sessions", () => {
   });
 
   it("should reject 403 when folderPath matches private project", async () => {
-    mockedGetPrivateProjectPaths.mockResolvedValue(new Set(["/tmp/secret"]));
+    mockedGetPrivateGroupIds.mockResolvedValue(new Set(["g-private"]));
+    mockedListProjects.mockResolvedValue([
+      { id: "s1", name: "secret", path: "/tmp/secret", isGitRepo: false, addedAt: "2026-01-01", groupId: "g-private" },
+    ]);
 
     const res = await request(createApp())
       .post("/api/sessions")
@@ -143,7 +150,10 @@ describe("POST /api/sessions", () => {
       id: "priv1", name: "secret", path: "/tmp/secret",
       isGitRepo: false, addedAt: "2026-01-01", isPrivate: true,
     });
-    mockedGetPrivateProjectPaths.mockResolvedValue(new Set(["/tmp/secret"]));
+    mockedGetPrivateGroupIds.mockResolvedValue(new Set(["g-private"]));
+    mockedListProjects.mockResolvedValue([
+      { id: "s1", name: "secret", path: "/tmp/secret", isGitRepo: false, addedAt: "2026-01-01", groupId: "g-private" },
+    ]);
 
     const res = await request(createApp())
       .post("/api/sessions")
@@ -177,7 +187,7 @@ describe("GET /api/sessions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockedIsUnlockedHeader.mockReturnValue(false);
-    mockedGetPrivateProjectPaths.mockResolvedValue(new Set());
+    mockedGetPrivateGroupIds.mockResolvedValue(new Set());
   });
 
   it("should return sessions with projectName and lastOutput", async () => {
@@ -224,7 +234,10 @@ describe("GET /api/sessions", () => {
   });
 
   it("should filter out sessions of private projects when locked", async () => {
-    mockedGetPrivateProjectPaths.mockResolvedValue(new Set(["/tmp/secret"]));
+    mockedGetPrivateGroupIds.mockResolvedValue(new Set(["g-private"]));
+    mockedListProjects.mockResolvedValue([
+      { id: "s1", name: "secret", path: "/tmp/secret", isGitRepo: false, addedAt: "2026-01-01", groupId: "g-private" },
+    ]);
     mockedListSessions.mockReturnValue([
       {
         id: "pub-sess",
@@ -243,7 +256,6 @@ describe("GET /api/sessions", () => {
         endedAt: null,
       },
     ]);
-    mockedListProjects.mockResolvedValue([]);
     mockedGetLastOutput.mockReturnValue("");
 
     const res = await request(createApp()).get("/api/sessions");

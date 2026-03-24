@@ -19,11 +19,10 @@ async function loadProjects(): Promise<void> {
   try {
     await ensureStoreDir();
     const data = await readFile(STORE_FILE, "utf-8");
-    projects = JSON.parse(data).map((p: Record<string, unknown>) => ({
-      ...p,
-      isPrivate: p.isPrivate ?? false,
-      groupId: p.groupId ?? null,
-    }));
+    projects = JSON.parse(data).map((p: Record<string, unknown>) => {
+      const { isPrivate, ...rest } = p; // strip legacy isPrivate field
+      return { ...rest, groupId: p.groupId ?? null };
+    });
   } catch {
     projects = [];
   }
@@ -76,32 +75,12 @@ export async function addProject(projectPath: string): Promise<Project> {
     path: resolved,
     isGitRepo,
     addedAt: new Date().toISOString(),
-    isPrivate: false,
     groupId: null,
   };
 
   projects.push(project);
   await saveProjects();
   return project;
-}
-
-export async function setPrivate(
-  id: string,
-  isPrivate: boolean,
-): Promise<Project> {
-  await loadProjects();
-  const project = projects.find((p) => p.id === id);
-  if (!project) {
-    throw new Error("Project not found");
-  }
-  project.isPrivate = isPrivate;
-  await saveProjects();
-  return { ...project };
-}
-
-export async function getPrivateProjectPaths(): Promise<Set<string>> {
-  await loadProjects();
-  return new Set(projects.filter((p) => p.isPrivate).map((p) => p.path));
 }
 
 export async function setGroupId(

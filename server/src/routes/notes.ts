@@ -1,6 +1,7 @@
 import { Router } from "express";
 import * as projectStore from "../services/project-store.js";
 import * as noteStore from "../services/note-store.js";
+import * as groupStore from "../services/group-store.js";
 import { isUnlockedHeader } from "../services/unlock-store.js";
 import type { Project } from "../types.js";
 
@@ -20,9 +21,13 @@ async function resolveProject(
     res.status(404).json({ error: "Project not found" });
     return null;
   }
-  if (project.isPrivate && !isUnlockedHeader(req.headers)) {
-    res.status(403).json({ error: "Project is private" });
-    return null;
+  // Check if project is in a private group
+  if (project.groupId && !isUnlockedHeader(req.headers)) {
+    const privateGroupIds = await groupStore.getPrivateGroupIds();
+    if (privateGroupIds.has(project.groupId)) {
+      res.status(403).json({ error: "Project is private" });
+      return null;
+    }
   }
   return project;
 }

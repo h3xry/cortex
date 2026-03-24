@@ -8,6 +8,7 @@ import {
 } from "../errors.js";
 import { getActivityByFolderPath } from "../services/session-activity.js";
 import { isUnlockedHeader } from "../services/unlock-store.js";
+import * as groupStore from "../services/group-store.js";
 
 export const sessionsRouter = Router();
 
@@ -31,12 +32,18 @@ sessionsRouter.post("/", async (req, res) => {
     return;
   }
 
-  // Check if resolved path belongs to a private project
+  // Check if resolved path belongs to a project in a private group
   if (!isUnlockedHeader(req.headers)) {
-    const privatePaths = await projectStore.getPrivateProjectPaths();
-    if (privatePaths.has(resolvedPath)) {
-      res.status(403).json({ error: "Project is private" });
-      return;
+    const privateGroupIds = await groupStore.getPrivateGroupIds();
+    if (privateGroupIds.size > 0) {
+      const allProjects = await projectStore.listProjects();
+      const privatePaths = new Set(
+        allProjects.filter((p) => p.groupId && privateGroupIds.has(p.groupId)).map((p) => p.path),
+      );
+      if (privatePaths.has(resolvedPath)) {
+        res.status(403).json({ error: "Project is private" });
+        return;
+      }
     }
   }
 
@@ -75,9 +82,21 @@ sessionsRouter.get("/", async (req, res) => {
     const sessions = sessionManager.listSessions();
     const projects = await projectStore.listProjects();
     const unlocked = isUnlockedHeader(req.headers);
-    const privatePaths = unlocked
-      ? new Set<string>()
-      : await projectStore.getPrivateProjectPaths();
+    let privatePaths: Set<string>;
+    if (unlocked) {
+      privatePaths = new Set<string>();
+    } else {
+      // Hide sessions of projects in private groups
+      const privateGroupIds = await groupStore.getPrivateGroupIds();
+      privatePaths = new Set<string>();
+      if (privateGroupIds.size > 0) {
+        for (const p of projects) {
+          if (p.groupId && privateGroupIds.has(p.groupId)) {
+            privatePaths.add(p.path);
+          }
+        }
+      }
+    }
 
     res.json({
       sessions: sessions

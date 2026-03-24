@@ -1,6 +1,7 @@
 import { Router } from "express";
 import * as groupStore from "../services/group-store.js";
 import * as projectStore from "../services/project-store.js";
+import { isUnlockedHeader } from "../services/unlock-store.js";
 
 export const groupRouter = Router();
 
@@ -8,9 +9,11 @@ const MAX_NAME_LEN = 100;
 const HEX_COLOR_RE = /^#[0-9a-fA-F]{6}$/;
 
 // GET /api/groups
-groupRouter.get("/", async (_req, res) => {
+groupRouter.get("/", async (req, res) => {
   try {
-    const groups = await groupStore.listGroups();
+    const allGroups = await groupStore.listGroups();
+    const unlocked = isUnlockedHeader(req.headers);
+    const groups = unlocked ? allGroups : allGroups.filter((g) => !g.isPrivate);
     res.json({ groups });
   } catch (err) {
     console.error("Group list error:", err);
@@ -21,7 +24,7 @@ groupRouter.get("/", async (_req, res) => {
 // POST /api/groups
 groupRouter.post("/", async (req, res) => {
   try {
-    const { name, icon, color } = req.body;
+    const { name, icon, color, isPrivate } = req.body;
 
     if (!name || typeof name !== "string" || name.length > MAX_NAME_LEN) {
       res.status(400).json({ error: "name is required (max 100 chars)" });
@@ -40,7 +43,7 @@ groupRouter.post("/", async (req, res) => {
       return;
     }
 
-    const group = await groupStore.createGroup({ name, icon, color });
+    const group = await groupStore.createGroup({ name, icon, color, isPrivate: !!isPrivate });
     res.status(201).json(group);
   } catch (err) {
     console.error("Group create error:", err);
@@ -51,7 +54,7 @@ groupRouter.post("/", async (req, res) => {
 // PATCH /api/groups/:id
 groupRouter.patch("/:id", async (req, res) => {
   try {
-    const { name, icon, color } = req.body;
+    const { name, icon, color, isPrivate } = req.body;
 
     if (name !== undefined) {
       if (typeof name !== "string" || name.length > MAX_NAME_LEN || /[\r\n]/.test(name)) {
@@ -64,7 +67,7 @@ groupRouter.patch("/:id", async (req, res) => {
       return;
     }
 
-    const group = await groupStore.updateGroup(req.params.id, { name, icon, color });
+    const group = await groupStore.updateGroup(req.params.id, { name, icon, color, isPrivate });
     if (!group) {
       res.status(404).json({ error: "Group not found" });
       return;

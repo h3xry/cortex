@@ -53,7 +53,6 @@ export interface Project {
   path: string;
   isGitRepo: boolean;
   addedAt: string;
-  isPrivate: boolean;
   groupId: string | null;
 }
 
@@ -63,6 +62,7 @@ export interface Group {
   icon: string;
   color: string;
   order: number;
+  isPrivate: boolean;
   createdAt: string;
 }
 

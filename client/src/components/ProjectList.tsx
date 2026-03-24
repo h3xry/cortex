@@ -17,13 +17,10 @@ interface ProjectListProps {
   projects: Project[];
   sessions: Session[];
   selectedProjectId: string | null;
-  unlocked: boolean;
   groups: Group[];
   groupFilter: string | null;
   onSelect: (project: Project) => void;
   onRemove: (id: string) => void;
-  onSetPrivate: (project: Project) => void;
-  onRemovePrivate: (project: Project) => void;
   onCreateGroup: (data: { name: string; icon: string; color: string }) => void;
   onUpdateGroup: (id: string, data: Partial<Pick<Group, "name" | "icon" | "color">>) => void;
   onDeleteGroup: (id: string) => void;
@@ -36,13 +33,10 @@ export function ProjectList({
   projects,
   sessions,
   selectedProjectId,
-  unlocked,
   groups,
   groupFilter,
   onSelect,
   onRemove,
-  onSetPrivate,
-  onRemovePrivate,
   onCreateGroup,
   onUpdateGroup,
   onDeleteGroup,
@@ -115,7 +109,6 @@ export function ProjectList({
       >
         <div className="project-info">
           <span className="project-name">
-            {project.isPrivate && <span className="private-badge">P</span>}
             {project.name}
           </span>
           {project.isGitRepo && <span className="git-badge">git</span>}
@@ -135,12 +128,6 @@ export function ProjectList({
             >
               ⇄
             </button>
-            {!project.isPrivate && (
-              <button className="privacy-button" onClick={(e) => { e.stopPropagation(); onSetPrivate(project); }} title="Set private">Hide</button>
-            )}
-            {project.isPrivate && unlocked && (
-              <button className="privacy-button" onClick={(e) => { e.stopPropagation(); onRemovePrivate(project); }} title="Remove private">Show</button>
-            )}
             <button className="remove-button" onClick={(e) => { e.stopPropagation(); onRemove(project.id); }} title="Remove project">x</button>
           </div>
         </div>
@@ -211,11 +198,8 @@ export function ProjectList({
             projects={groupProjects}
             sessions={sessions}
             selectedProjectId={selectedProjectId}
-            unlocked={unlocked}
             onSelectProject={onSelect}
             onRemoveProject={onRemove}
-            onSetPrivate={onSetPrivate}
-            onRemovePrivate={onRemovePrivate}
             onEditGroup={() => { setEditGroup(group); setShowGroupForm(true); }}
             onDeleteGroup={() => {
               if (groupProjects.length > 0 && !confirm(`Delete "${group.name}"? ${groupProjects.length} projects will be ungrouped.`)) return;

@@ -19,7 +19,10 @@ async function loadGroups(): Promise<void> {
   try {
     await ensureStoreDir();
     const data = await readFile(STORE_FILE, "utf-8");
-    groups = JSON.parse(data);
+    groups = JSON.parse(data).map((g: Record<string, unknown>) => ({
+      ...g,
+      isPrivate: g.isPrivate ?? false,
+    }));
   } catch {
     groups = [];
   }
@@ -45,6 +48,7 @@ export async function createGroup(data: {
   name: string;
   icon: string;
   color: string;
+  isPrivate?: boolean;
 }): Promise<Group> {
   await loadGroups();
   const group: Group = {
@@ -53,6 +57,7 @@ export async function createGroup(data: {
     icon: data.icon,
     color: data.color,
     order: groups.length,
+    isPrivate: data.isPrivate ?? false,
     createdAt: new Date().toISOString(),
   };
   groups.push(group);
@@ -62,7 +67,7 @@ export async function createGroup(data: {
 
 export async function updateGroup(
   id: string,
-  data: Partial<Pick<Group, "name" | "icon" | "color">>,
+  data: Partial<Pick<Group, "name" | "icon" | "color" | "isPrivate">>,
 ): Promise<Group | null> {
   await loadGroups();
   const group = groups.find((g) => g.id === id);
@@ -70,6 +75,7 @@ export async function updateGroup(
   if (data.name !== undefined) group.name = data.name;
   if (data.icon !== undefined) group.icon = data.icon;
   if (data.color !== undefined) group.color = data.color;
+  if (data.isPrivate !== undefined) group.isPrivate = data.isPrivate;
   await saveGroups();
   return { ...group };
 }
@@ -101,6 +107,11 @@ export async function reorderGroups(ids: string[]): Promise<boolean> {
   groups = reordered;
   await saveGroups();
   return true;
+}
+
+export async function getPrivateGroupIds(): Promise<Set<string>> {
+  await loadGroups();
+  return new Set(groups.filter((g) => g.isPrivate).map((g) => g.id));
 }
 
 // For testing
