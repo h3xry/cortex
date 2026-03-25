@@ -101,6 +101,14 @@ export const TerminalInput = forwardRef<TerminalInputHandle, TerminalInputProps>
           ↓
         </button>
         <button
+          className="terminal-key-button"
+          onClick={() => onSendControl("BTab")}
+          disabled={disabled}
+          title="Shift+Tab (toggle mode)"
+        >
+          ⇧Tab
+        </button>
+        <button
           className="terminal-ctrl-c-button"
           onClick={() => onSendControl("C-c")}
           disabled={disabled}

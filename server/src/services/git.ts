@@ -28,6 +28,19 @@ export async function getBranch(projectPath: string): Promise<string | null> {
   }
 }
 
+export async function hasConflict(projectPath: string): Promise<boolean> {
+  try {
+    const { stdout } = await execFileAsync(
+      "git",
+      ["status", "--porcelain"],
+      { cwd: projectPath },
+    );
+    return stdout.split("\n").some((line) => line.startsWith("UU") || line.startsWith("AA") || line.startsWith("DD"));
+  } catch {
+    return false;
+  }
+}
+
 export async function getStatus(projectPath: string): Promise<GitChange[]> {
   try {
     const { stdout } = await execFileAsync(

@@ -4,7 +4,7 @@ title: Notification & Alert System
 tags: [idea, notification, session]
 pinned: false
 createdAt: 2026-03-25T12:00:00.000Z
-updatedAt: 2026-03-25T12:00:00.000Z
+updatedAt: 2026-03-25T13:00:00.000Z
 ---
 
 แจ้งเตือนเมื่อเกิด event สำคัญ
@@ -17,3 +17,5 @@ updatedAt: 2026-03-25T12:00:00.000Z
 - ตั้ง rules ได้ เช่น "แจ้งเมื่อ project X จบ"
 
 ตอนนี้ต้องเปิดดูเองว่า session จบหรือยัง — ไม่มี push
+
+**Status:** spec created → `.claude/specs/015-notification-system/spec.md`

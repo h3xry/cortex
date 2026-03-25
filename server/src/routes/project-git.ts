@@ -17,12 +17,13 @@ projectGitRouter.get("/status", async (req, res) => {
     return;
   }
 
-  const [branch, changes] = await Promise.all([
+  const [branch, changes, conflict] = await Promise.all([
     git.getBranch(project.path),
     git.getStatus(project.path),
+    git.hasConflict(project.path),
   ]);
 
-  res.json({ isGitRepo: true, branch, changes });
+  res.json({ isGitRepo: true, branch, changes, hasConflict: conflict });
 });
 
 projectGitRouter.get("/diff", async (req, res) => {

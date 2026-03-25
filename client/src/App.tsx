@@ -1,13 +1,18 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { AddProject } from "./components/AddProject";
 import { ProjectList } from "./components/ProjectList";
 import { ProjectPanel } from "./components/ProjectPanel";
 import { SessionManager } from "./components/SessionManager";
 import { UnlockModal } from "./components/UnlockModal";
+import { ToastContainer } from "./components/ToastContainer";
+import { NotificationPanel } from "./components/NotificationPanel";
+import { NotificationSettings } from "./components/NotificationSettings";
 import { useProjects } from "./hooks/useProjects";
 import { useSessions } from "./hooks/useSessions";
 import { useGroups } from "./hooks/useGroups";
-import type { Project, Session } from "./types";
+import { useNotifications } from "./hooks/useNotifications";
+import { requestPermission } from "./services/notification";
+import type { Project, Session, NotificationEvent } from "./types";
 
 export function App() {
   const {
@@ -23,13 +28,39 @@ export function App() {
   const { sessions, deleteSession } = useSessions();
   const groupsState = useGroups();
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const notifications = useNotifications(sessions, selectedProject?.id ?? null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mainView, setMainView] = useState<"project" | "sessions">("project");
   const [groupFilter, setGroupFilter] = useState<string | null>(null);
   const [showUnlock, setShowUnlock] = useState(false);
   const [targetSessionId, setTargetSessionId] = useState<string | null>(null);
+  const [showNotifBanner, setShowNotifBanner] = useState(false);
+  const [showNotifPanel, setShowNotifPanel] = useState(false);
+  const [showNotifSettings, setShowNotifSettings] = useState(false);
 
   const runningCount = sessions.filter((s) => s.status === "running").length;
+
+  // Request notification permission on first session launch
+  useEffect(() => {
+    if ("Notification" in window && Notification.permission === "default" && sessions.length > 0) {
+      setShowNotifBanner(true);
+    }
+  }, [sessions.length]);
+
+  const handleNotifNavigate = useCallback(
+    (event: NotificationEvent) => {
+      const matchedProject = projects.find((p) => p.path === event.projectId);
+      if (matchedProject) {
+        setSelectedProject(matchedProject);
+        if (event.sessionId) {
+          setTargetSessionId(event.sessionId);
+        }
+        setMainView("project");
+        setSidebarOpen(false);
+      }
+    },
+    [projects],
+  );
 
   const handleAddProject = async (path: string) => {
     const project = await addProject(path);
@@ -107,6 +138,26 @@ export function App() {
               <span className="sidebar-toggle-badge">{runningCount}</span>
             )}
           </button>
+          <div style={{ marginLeft: "auto" }}>
+            <button
+              className="notification-bell"
+              onClick={() => { setShowNotifPanel(!showNotifPanel); if (!showNotifPanel) notifications.markAllRead(); }}
+              title="Notifications"
+            >
+              🔔
+              {notifications.unreadCount > 0 && (
+                <span className="notification-badge">{notifications.unreadCount}</span>
+              )}
+            </button>
+            {showNotifPanel && (
+              <NotificationPanel
+                history={notifications.history}
+                onClear={() => { notifications.clearHistory(); setShowNotifPanel(false); }}
+                onNavigate={(e) => { handleNotifNavigate(e); setShowNotifPanel(false); }}
+                onMarkAllRead={notifications.markAllRead}
+              />
+            )}
+          </div>
         </div>
 
         <AddProject
@@ -202,6 +253,34 @@ export function App() {
           onUnlock={handleUnlock}
           onCancel={() => setShowUnlock(false)}
         />
+      )}
+
+      <ToastContainer
+        toasts={notifications.toasts}
+        onDismiss={notifications.dismissToast}
+        onNavigate={handleNotifNavigate}
+      />
+
+      {showNotifBanner && (
+        <div className="notification-banner" style={{ position: "fixed", bottom: 16, left: 16, right: 16, zIndex: 9998 }}>
+          <span className="notification-banner-text">
+            Enable notifications to get alerts when sessions complete or need input.
+          </span>
+          <div className="notification-banner-actions">
+            <button
+              className="notification-banner-enable"
+              onClick={async () => { await requestPermission(); setShowNotifBanner(false); }}
+            >
+              Enable
+            </button>
+            <button
+              className="notification-banner-later"
+              onClick={() => setShowNotifBanner(false)}
+            >
+              Later
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

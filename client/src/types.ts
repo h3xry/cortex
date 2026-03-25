@@ -130,3 +130,39 @@ export interface NoteMeta {
   createdAt: string;
   updatedAt: string;
 }
+
+// Notification types
+
+export type NotificationType =
+  | "session_completed"
+  | "session_error"
+  | "waiting_input"
+  | "long_running"
+  | "git_conflict";
+
+export interface NotificationEvent {
+  id: string;
+  type: NotificationType;
+  projectId: string;
+  projectName: string;
+  sessionId: string | null;
+  title: string;
+  message: string;
+  targetUrl: string;
+  timestamp: string;
+  read: boolean;
+}
+
+export interface ProjectNotificationRules {
+  session_completed: boolean;
+  session_error: boolean;
+  waiting_input: boolean;
+  long_running: boolean;
+  git_conflict: boolean;
+}
+
+export interface NotificationSettings {
+  soundEnabled: boolean;
+  longRunningThreshold: number;
+  projectRules: Record<string, ProjectNotificationRules>;
+}
