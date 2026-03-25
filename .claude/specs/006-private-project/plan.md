@@ -16,7 +16,7 @@ v2 เปลี่ยนเป็น **server-side enforcement** — server filt
 |--------|----------|
 | Language/Version | TypeScript (Node.js + React) |
 | Primary Dependencies | express, crypto (built-in), ws, react |
-| Storage | JSON file (`~/.cc-monitor/projects.json` + `settings.json`) + in-memory Set for tokens |
+| Storage | JSON file (`~/.cortex/projects.json` + `settings.json`) + in-memory Set for tokens |
 | Testing | vitest + supertest |
 | Target Platform | Web (responsive) |
 | Project Type | Full-stack web app |

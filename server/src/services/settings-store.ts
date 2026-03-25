@@ -2,7 +2,7 @@ import { readFile, writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 
-const STORE_DIR = path.join(os.homedir(), ".cc-monitor");
+const STORE_DIR = path.join(os.homedir(), ".cortex");
 const SETTINGS_FILE = path.join(STORE_DIR, "settings.json");
 
 interface Settings {

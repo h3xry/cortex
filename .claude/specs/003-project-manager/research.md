@@ -6,7 +6,7 @@
 
 ## 1. Project Persistence
 
-**Decision:** JSON file at `~/.cc-monitor/projects.json`
+**Decision:** JSON file at `~/.cortex/projects.json`
 **Rationale:** Simple, no database dependency, easy to edit manually. Server reads/writes on demand. File is outside the project directory so it works across projects.
 **Alternatives:**
 - SQLite — overkill for a list of paths

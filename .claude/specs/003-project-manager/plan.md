@@ -17,7 +17,7 @@
 |--------|----------|
 | Language/Version | TypeScript (existing monorepo) |
 | New Dependencies | `prism-react-renderer` (syntax highlighting) |
-| Project Storage | JSON file (`~/.cc-monitor/projects.json`) |
+| Project Storage | JSON file (`~/.cortex/projects.json`) |
 | Git Commands | `git status --porcelain`, `git diff HEAD`, `git branch --show-current` via execFile |
 | File Access | `fs.readdir`, `fs.readFile` with path validation |
 | Security | Reuse `isPathWithinRoot` — root = project path |
@@ -84,7 +84,7 @@ client/src/
 │        │                       │                      │
 │        ▼                       ▼                      │
 │  project-store.ts        fs + execFile(git)           │
-│  (~/.cc-monitor/         (path-guarded)               │
+│  (~/.cortex/         (path-guarded)               │
 │   projects.json)                                      │
 └───────────────────────────────────────────────────────┘
 ```

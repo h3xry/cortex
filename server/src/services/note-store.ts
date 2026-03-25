@@ -3,7 +3,7 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import type { Note, NoteMeta } from "../types.js";
 
-const NOTES_FOLDER = ".cc-monitor/notes";
+const NOTES_FOLDER = ".cortex/notes";
 const ID_RE = /^[a-zA-Z0-9]{1,64}$/;
 const FRONTMATTER_RE = /^---\n([\s\S]*?)\n---\n?([\s\S]*)$/;
 

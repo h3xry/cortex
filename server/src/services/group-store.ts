@@ -4,7 +4,7 @@ import os from "node:os";
 import { randomUUID } from "node:crypto";
 import type { Group } from "../types.js";
 
-const STORE_DIR = path.join(os.homedir(), ".cc-monitor");
+const STORE_DIR = path.join(os.homedir(), ".cortex");
 const STORE_FILE = path.join(STORE_DIR, "groups.json");
 
 let groups: Group[] = [];

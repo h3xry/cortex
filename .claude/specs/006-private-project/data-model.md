@@ -12,7 +12,7 @@
 | addedAt | string | existing | ISO 8601 datetime |
 | **isPrivate** | **boolean** | **v1** | Whether project is hidden |
 
-### Settings (v1, no change in v2: `~/.cc-monitor/settings.json`)
+### Settings (v1, no change in v2: `~/.cortex/settings.json`)
 | Field | Type | Description |
 |-------|------|-------------|
 | privatePasswordHash | string \| null | scrypt hash of global private password |

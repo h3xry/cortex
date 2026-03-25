@@ -11,7 +11,7 @@
 
 ## Global Password Storage
 
-**Decision:** เก็บ `privatePasswordHash` ใน `~/.cc-monitor/settings.json` แยกจาก projects.json
+**Decision:** เก็บ `privatePasswordHash` ใน `~/.cortex/settings.json` แยกจาก projects.json
 **Rationale:** Password เป็น global setting ไม่ใช่ per-project data, แยกไฟล์ทำให้ clean กว่า
 **Alternatives:**
 - เก็บใน projects.json — ปน data กับ config

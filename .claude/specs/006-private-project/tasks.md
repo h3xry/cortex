@@ -14,7 +14,7 @@
 - [x] T001 [P] Add `isPrivate: boolean` to Project type in `server/src/types.ts`
 - [x] T002 [P] Add `isPrivate: boolean` to Project type in `client/src/types.ts`
 - [x] T003 Create crypto helpers (hashPassword, verifyPassword) using `crypto.scrypt` in `server/src/services/crypto.ts`
-- [x] T004 Create settings store (load/save `~/.cc-monitor/settings.json`, get/set passwordHash) in `server/src/services/settings-store.ts`
+- [x] T004 Create settings store (load/save `~/.cortex/settings.json`, get/set passwordHash) in `server/src/services/settings-store.ts`
 
 ### Phase 2: Foundation — Server API (BLOCKS all stories)
 

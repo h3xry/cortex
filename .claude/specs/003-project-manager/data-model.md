@@ -21,7 +21,7 @@
 - path must exist and be a directory
 - path must not be a duplicate (same path already added)
 
-**Storage:** `~/.cc-monitor/projects.json` — array of Project objects
+**Storage:** `~/.cortex/projects.json` — array of Project objects
 
 ### FileEntry
 

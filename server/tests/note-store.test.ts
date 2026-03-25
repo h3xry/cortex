@@ -34,7 +34,7 @@ describe("note-store", () => {
     expect(note.tags).toEqual(["tag1", "tag2"]);
     expect(note.pinned).toBe(false);
 
-    const filePath = path.join(projectPath, ".cc-monitor", "notes", `${note.id}.md`);
+    const filePath = path.join(projectPath, ".cortex", "notes", `${note.id}.md`);
     const content = await readFile(filePath, "utf-8");
     expect(content).toContain("---");
     expect(content).toContain("title: Test Note");

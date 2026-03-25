@@ -11,7 +11,7 @@
 - [ ] T001 Add Project, FileEntry, GitChange, GitDiff types to `server/src/types.ts`
 - [ ] T002 [P] Add matching types to `client/src/types.ts`
 - [ ] T003 Install `prism-react-renderer` in client — `npm install prism-react-renderer -w client`
-- [ ] T004 Implement project-store service in `server/src/services/project-store.ts` — load/save JSON file (`~/.cc-monitor/projects.json`), add/remove/list/getById
+- [ ] T004 Implement project-store service in `server/src/services/project-store.ts` — load/save JSON file (`~/.cortex/projects.json`), add/remove/list/getById
 - [ ] T005 Write tests for project-store in `server/tests/project-store.test.ts` — CRUD, persistence, duplicate detection, invalid path rejection
 - [ ] T006 Implement git service in `server/src/services/git.ts` — isGitRepo, getBranch, getStatus (parse `git status --porcelain`), getDiff (parse `git diff HEAD` into structured hunks), all via execFile
 - [ ] T007 Write tests for git service in `server/tests/git.test.ts` — mock execFile, test status parsing, diff parsing, non-git repo handling
