@@ -2590,6 +2590,21 @@ body {
 .note-pin-btn.active { opacity: 1; }
 .note-pin-btn:hover { opacity: 0.8; }
 
+.note-card-id {
+  font-size: 11px;
+  color: #6c7086;
+  font-family: monospace;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+
+.note-editor-id {
+  font-size: 11px;
+  color: #6c7086;
+  font-family: monospace;
+  margin-right: 8px;
+}
+
 .note-card-title {
   flex: 1;
   font-weight: 600;
@@ -2888,6 +2903,34 @@ body {
 
 .note-viewer-content .wmde-markdown pre {
   background: #181825 !important;
+}
+
+.note-viewer-content details {
+  margin-top: 24px;
+  border: 1px solid #313244;
+  border-radius: 6px;
+  padding: 0;
+}
+
+.note-viewer-content details summary {
+  cursor: pointer;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #6c7086;
+  background: #1e1e2e;
+  border-radius: 6px;
+  user-select: none;
+}
+
+.note-viewer-content details[open] summary {
+  border-bottom: 1px solid #313244;
+  border-radius: 6px 6px 0 0;
+}
+
+.note-viewer-content details > *:not(summary) {
+  padding: 12px;
+  font-size: 13px;
+  color: #6c7086;
 }
 
 /* Mobile notes */

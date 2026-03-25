@@ -1,19 +1,53 @@
-import { readFile, writeFile, mkdir, readdir, unlink } from "node:fs/promises";
+import { readFile, writeFile, mkdir, readdir, unlink, rename } from "node:fs/promises";
 import path from "node:path";
-import { randomUUID } from "node:crypto";
 import type { Note, NoteMeta } from "../types.js";
 
 const NOTES_FOLDER = ".cortex/notes";
 const ID_RE = /^[a-zA-Z0-9]{1,64}$/;
+const SEQ_RE = /^(\d{3,})-/;
 const FRONTMATTER_RE = /^---\n([\s\S]*?)\n---\n?([\s\S]*)$/;
 
 function notesDir(projectPath: string): string {
   return path.join(projectPath, NOTES_FOLDER);
 }
 
-function noteFile(projectPath: string, noteId: string): string {
+function slugify(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 50) || "untitled";
+}
+
+function makeFilename(id: string, title: string): string {
+  return `${id}-${slugify(title)}.md`;
+}
+
+async function findFile(projectPath: string, noteId: string): Promise<string | null> {
+  const dir = notesDir(projectPath);
+  let files: string[];
+  try {
+    files = await readdir(dir);
+  } catch {
+    return null;
+  }
+  // Exact match first (backward compat with old format like "abc12345.md")
+  if (files.includes(`${noteId}.md`)) {
+    return path.join(dir, `${noteId}.md`);
+  }
+  // Match by ID prefix (e.g. "001" matches "001-meeting-note.md")
+  for (const f of files) {
+    if (f.startsWith(`${noteId}-`) && f.endsWith(".md")) {
+      return path.join(dir, f);
+    }
+  }
+  return null;
+}
+
+function noteIdValidate(noteId: string): void {
   if (!ID_RE.test(noteId)) throw new Error("Invalid note ID");
-  return path.join(notesDir(projectPath), `${noteId}.md`);
 }
 
 async function ensureDir(projectPath: string): Promise<void> {
@@ -91,6 +125,12 @@ function noteToMeta(note: Note): NoteMeta {
   };
 }
 
+function extractId(filename: string): string {
+  const name = filename.slice(0, -3); // remove .md
+  const match = name.match(SEQ_RE);
+  return match ? match[1] : name;
+}
+
 function parseNoteFile(content: string): Omit<Note, "id"> {
   const { meta, body } = parseFrontmatter(content);
   return {
@@ -125,7 +165,7 @@ export async function listNotes(projectPath: string): Promise<NoteMeta[]> {
   const notes: NoteMeta[] = [];
   for (const file of files) {
     if (!file.endsWith(".md")) continue;
-    const noteId = file.slice(0, -3);
+    const noteId = extractId(file);
     try {
       const content = await readFile(path.join(dir, file), "utf-8");
       const parsed = parseNoteFile(content);
@@ -139,14 +179,34 @@ export async function listNotes(projectPath: string): Promise<NoteMeta[]> {
 }
 
 export async function getNote(projectPath: string, noteId: string): Promise<Note | null> {
+  noteIdValidate(noteId);
+  const filePath = await findFile(projectPath, noteId);
+  if (!filePath) return null;
   try {
-    const content = await readFile(noteFile(projectPath, noteId), "utf-8");
+    const content = await readFile(filePath, "utf-8");
     const parsed = parseNoteFile(content);
     return { id: noteId, ...parsed };
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code === "ENOENT") return null;
     throw err;
   }
+}
+
+async function nextId(projectPath: string): Promise<string> {
+  const dir = notesDir(projectPath);
+  let files: string[];
+  try {
+    files = await readdir(dir);
+  } catch {
+    return "001";
+  }
+  let max = 0;
+  for (const f of files) {
+    if (!f.endsWith(".md")) continue;
+    const num = parseInt(extractId(f), 10);
+    if (!isNaN(num) && num > max) max = num;
+  }
+  return String(max + 1).padStart(3, "0");
 }
 
 export async function createNote(
@@ -156,7 +216,7 @@ export async function createNote(
   await ensureDir(projectPath);
   const now = new Date().toISOString();
   const note: Note = {
-    id: randomUUID().slice(0, 8),
+    id: await nextId(projectPath),
     title: data.title?.trim() || "Untitled",
     content: data.content ?? "",
     tags: [...new Set((data.tags ?? []).map((t) => t.trim()).filter(Boolean))],
@@ -164,7 +224,8 @@ export async function createNote(
     createdAt: now,
     updatedAt: now,
   };
-  await writeFile(noteFile(projectPath, note.id), serializeFrontmatter(note));
+  const filename = makeFilename(note.id, note.title);
+  await writeFile(path.join(notesDir(projectPath), filename), serializeFrontmatter(note));
   return note;
 }
 
@@ -173,8 +234,13 @@ export async function updateNote(
   noteId: string,
   data: Partial<Pick<Note, "title" | "content" | "tags" | "pinned">>,
 ): Promise<Note | null> {
-  const note = await getNote(projectPath, noteId);
-  if (!note) return null;
+  noteIdValidate(noteId);
+  const oldPath = await findFile(projectPath, noteId);
+  if (!oldPath) return null;
+
+  const content = await readFile(oldPath, "utf-8");
+  const parsed = parseNoteFile(content);
+  const note: Note = { id: noteId, ...parsed };
 
   if (data.title !== undefined) note.title = data.title.trim() || "Untitled";
   if (data.content !== undefined) note.content = data.content;
@@ -182,13 +248,22 @@ export async function updateNote(
   if (data.pinned !== undefined) note.pinned = data.pinned;
   note.updatedAt = new Date().toISOString();
 
-  await writeFile(noteFile(projectPath, noteId), serializeFrontmatter(note));
+  const newFilename = makeFilename(noteId, note.title);
+  const newPath = path.join(notesDir(projectPath), newFilename);
+
+  if (oldPath !== newPath) {
+    await unlink(oldPath);
+  }
+  await writeFile(newPath, serializeFrontmatter(note));
   return note;
 }
 
 export async function deleteNote(projectPath: string, noteId: string): Promise<boolean> {
+  noteIdValidate(noteId);
+  const filePath = await findFile(projectPath, noteId);
+  if (!filePath) return false;
   try {
-    await unlink(noteFile(projectPath, noteId));
+    await unlink(filePath);
     return true;
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code === "ENOENT") return false;

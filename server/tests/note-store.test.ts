@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtemp, rm, readFile } from "node:fs/promises";
+import { mkdtemp, rm, readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 
@@ -22,19 +22,19 @@ describe("note-store", () => {
     expect(notes).toEqual([]);
   });
 
-  it("createNote creates .md file with frontmatter in .notes folder", async () => {
+  it("createNote creates .md file with id-title filename", async () => {
     const note = await store.createNote(projectPath, {
       title: "Test Note",
       content: "# Hello\n\nWorld",
       tags: ["tag1", "tag2"],
     });
 
-    expect(note.id).toMatch(/^[a-f0-9]{8}$/);
+    expect(note.id).toMatch(/^[0-9]{3,}$/);
     expect(note.title).toBe("Test Note");
     expect(note.tags).toEqual(["tag1", "tag2"]);
     expect(note.pinned).toBe(false);
 
-    const filePath = path.join(projectPath, ".cortex", "notes", `${note.id}.md`);
+    const filePath = path.join(projectPath, ".cortex", "notes", "001-test-note.md");
     const content = await readFile(filePath, "utf-8");
     expect(content).toContain("---");
     expect(content).toContain("title: Test Note");
@@ -45,6 +45,9 @@ describe("note-store", () => {
   it("createNote defaults title to Untitled", async () => {
     const note = await store.createNote(projectPath, {});
     expect(note.title).toBe("Untitled");
+
+    const files = await readdir(path.join(projectPath, ".cortex", "notes"));
+    expect(files[0]).toBe("001-untitled.md");
   });
 
   it("createNote deduplicates tags", async () => {
@@ -64,7 +67,7 @@ describe("note-store", () => {
   });
 
   it("getNote returns null for unknown note", async () => {
-    const note = await store.getNote(projectPath, "nonexist");
+    const note = await store.getNote(projectPath, "999");
     expect(note).toBeNull();
   });
 
@@ -88,6 +91,23 @@ describe("note-store", () => {
     expect(notes[0].pinned).toBe(true);
   });
 
+  it("createNote generates sequential IDs", async () => {
+    const n1 = await store.createNote(projectPath, { title: "First" });
+    const n2 = await store.createNote(projectPath, { title: "Second" });
+    const n3 = await store.createNote(projectPath, { title: "Third" });
+    expect(n1.id).toBe("001");
+    expect(n2.id).toBe("002");
+    expect(n3.id).toBe("003");
+  });
+
+  it("createNote reuses deleted ID slot", async () => {
+    await store.createNote(projectPath, { title: "One" });
+    const n2 = await store.createNote(projectPath, { title: "Two" });
+    await store.deleteNote(projectPath, n2.id);
+    const n3 = await store.createNote(projectPath, { title: "Three" });
+    expect(n3.id).toBe("002");
+  });
+
   it("updateNote changes fields", async () => {
     const created = await store.createNote(projectPath, { title: "Original" });
     const updated = await store.updateNote(projectPath, created.id, {
@@ -101,8 +121,17 @@ describe("note-store", () => {
     expect(updated!.tags).toEqual(["new-tag"]);
   });
 
+  it("updateNote renames file when title changes", async () => {
+    const created = await store.createNote(projectPath, { title: "Old Title" });
+    await store.updateNote(projectPath, created.id, { title: "New Title" });
+
+    const files = await readdir(path.join(projectPath, ".cortex", "notes"));
+    expect(files).toContain("001-new-title.md");
+    expect(files).not.toContain("001-old-title.md");
+  });
+
   it("updateNote returns null for unknown note", async () => {
-    const result = await store.updateNote(projectPath, "nope", { title: "x" });
+    const result = await store.updateNote(projectPath, "999", { title: "x" });
     expect(result).toBeNull();
   });
 
@@ -115,7 +144,7 @@ describe("note-store", () => {
   });
 
   it("deleteNote returns false for unknown note", async () => {
-    expect(await store.deleteNote(projectPath, "nope")).toBe(false);
+    expect(await store.deleteNote(projectPath, "999")).toBe(false);
   });
 
   it("rejects invalid noteId", async () => {

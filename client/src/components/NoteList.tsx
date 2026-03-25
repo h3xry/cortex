@@ -196,6 +196,7 @@ export function NoteList({ projectId, notesState }: NoteListProps) {
             >
               {note.pinned ? "📌" : "📍"}
             </button>
+            <span className="note-card-id">#{note.id}</span>
             <span className="note-card-title">{note.title}</span>
             <button
               className="note-delete-btn"

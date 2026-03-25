@@ -122,6 +122,7 @@ export function NoteEditor({ noteId, fetchNote, onSave, onCancel, onAutoSave, al
     <div className="note-editor" data-color-mode="dark">
       <div className="note-editor-header">
         <button className="note-back-btn" onClick={onCancel}>Back</button>
+        {noteId && <span className="note-editor-id">#{noteId}</span>}
         <span className="note-editor-status">{saving ? "Saving..." : ""}</span>
         <button className="note-save-btn" onClick={handleSave}>Save</button>
       </div>

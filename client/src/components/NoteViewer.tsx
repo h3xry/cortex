@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import MDEditor from "@uiw/react-md-editor";
+import rehypeRaw from "rehype-raw";
 import type { Note } from "../types";
 import { getTagStyle } from "./NoteList";
 
@@ -47,11 +48,11 @@ export function NoteViewer({ noteId, fetchNote, onEdit, onBack, onDelete }: Note
       )}
 
       <div className="note-viewer-meta">
-        Created: {new Date(note.createdAt).toLocaleString()} | Updated: {new Date(note.updatedAt).toLocaleString()}
+        #{note.id} | Created: {new Date(note.createdAt).toLocaleString()} | Updated: {new Date(note.updatedAt).toLocaleString()}
       </div>
 
       <div className="note-viewer-content">
-        <MDEditor.Markdown source={note.content} />
+        <MDEditor.Markdown source={note.content} rehypePlugins={[rehypeRaw]} />
       </div>
     </div>
   );
