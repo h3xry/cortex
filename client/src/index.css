@@ -2,7 +2,14 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: #313244 transparent;
 }
+
+*::-webkit-scrollbar { width: 4px; height: 4px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: #313244; border-radius: 2px; }
+*::-webkit-scrollbar-thumb:hover { background: #45475a; }
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -1420,17 +1427,6 @@ body {
   position: relative;
 }
 
-/* Thin scrollbar for xterm terminal */
-.terminal-container .xterm-viewport {
-  scrollbar-width: thin;
-  scrollbar-color: #313244 transparent;
-}
-
-.terminal-container .xterm-viewport::-webkit-scrollbar { width: 4px; }
-.terminal-container .xterm-viewport::-webkit-scrollbar-track { background: transparent; }
-.terminal-container .xterm-viewport::-webkit-scrollbar-thumb { background: #313244; border-radius: 2px; }
-.terminal-container .xterm-viewport::-webkit-scrollbar-thumb:hover { background: #45475a; }
-
 .terminal-header {
   display: flex;
   justify-content: space-between;
@@ -1570,9 +1566,12 @@ body {
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
   font-size: 13px;
   outline: none;
-  resize: none;
+  resize: vertical;
   line-height: 1.4;
   box-sizing: border-box;
+  min-height: 40px;
+  max-height: 200px;
+  overflow-y: auto;
 }
 
 .terminal-input-field:focus {
@@ -3770,12 +3769,7 @@ body {
 .retro-list {
   flex: 1;
   overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: #313244 transparent;
 }
-
-.retro-list::-webkit-scrollbar { width: 4px; }
-.retro-list::-webkit-scrollbar-thumb { background: #313244; border-radius: 2px; }
 
 .retro-list-empty {
   padding: 24px;
@@ -3860,12 +3854,7 @@ body {
   flex: 1;
   overflow-y: auto;
   padding: 16px 20px;
-  scrollbar-width: thin;
-  scrollbar-color: #313244 transparent;
 }
-
-.retro-content-body::-webkit-scrollbar { width: 4px; }
-.retro-content-body::-webkit-scrollbar-thumb { background: #313244; border-radius: 2px; }
 
 .retro-content-body .wmde-markdown {
   background: transparent !important;
@@ -3909,14 +3898,6 @@ body {
   position: relative;
 }
 
-.split-panel * {
-  scrollbar-width: thin;
-  scrollbar-color: #313244 transparent;
-}
-
-.split-panel *::-webkit-scrollbar { width: 4px; height: 4px; }
-.split-panel *::-webkit-scrollbar-track { background: transparent; }
-.split-panel *::-webkit-scrollbar-thumb { background: #313244; border-radius: 2px; }
 
 .split-panel.focused {
   outline: 2px solid #89b4fa;
