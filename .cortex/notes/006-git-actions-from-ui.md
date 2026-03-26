@@ -5,7 +5,7 @@ tags: [idea, git, workflow]
 category: done
 pinned: false
 createdAt: 2026-03-25T12:00:00.000Z
-updatedAt: 2026-03-26T08:00:00.000Z
+updatedAt: 2026-03-26T07:34:26.249Z
 ---
 
 ทำ git operations จาก UI ได้เลย ไม่ต้องเปิด terminal

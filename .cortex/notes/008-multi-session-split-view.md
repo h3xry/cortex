@@ -2,10 +2,10 @@
 id: 008
 title: Multi-Session Split View
 tags: [idea, session, ux]
-category: idea
+category: done
 pinned: false
 createdAt: 2026-03-25T12:00:00.000Z
-updatedAt: 2026-03-26T10:00:00.000Z
+updatedAt: 2026-03-26T19:20:34.464Z
 ---
 
 แสดงหลาย sessions พร้อมกันแบบ split screen
