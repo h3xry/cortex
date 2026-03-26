@@ -91,6 +91,7 @@ export function TerminalView({
           onSendInput={sendInput}
           onSendControl={sendControl}
           disabled={sessionEnded}
+          sessionId={sessionId}
         />
       )}
     </div>

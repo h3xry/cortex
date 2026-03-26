@@ -9,6 +9,7 @@ interface TerminalInputProps {
   onSendInput: (text: string) => void;
   onSendControl: (key: string) => void;
   disabled: boolean;
+  sessionId?: string;
 }
 
 // Alt+Arrow and Alt+Tab send control keys to tmux
@@ -21,21 +22,43 @@ const ALT_KEYS: Record<string, string> = {
   Escape: "Escape",
 };
 
+function getDraftKey(sessionId?: string): string {
+  return sessionId ? `cortex-draft-${sessionId}` : "";
+}
+
+function loadDraft(sessionId?: string): string {
+  if (!sessionId) return "";
+  try { return sessionStorage.getItem(getDraftKey(sessionId)) ?? ""; } catch { return ""; }
+}
+
+function saveDraft(sessionId: string | undefined, value: string): void {
+  if (!sessionId) return;
+  try {
+    if (value) sessionStorage.setItem(getDraftKey(sessionId), value);
+    else sessionStorage.removeItem(getDraftKey(sessionId));
+  } catch { /* ignore */ }
+}
+
 export const TerminalInput = forwardRef<TerminalInputHandle, TerminalInputProps>(function TerminalInput({
   onSendInput,
   onSendControl,
   disabled,
+  sessionId,
 }, ref) {
   const nativeRef = useRef<HTMLTextAreaElement>(null);
+  const [input, setInput] = useState(() => loadDraft(sessionId));
 
   useImperativeHandle(ref, () => ({
     focus: () => nativeRef.current?.focus(),
     appendText: (text: string) => {
-      setInput((prev) => prev + text);
+      setInput((prev) => {
+        const next = prev + text;
+        saveDraft(sessionId, next);
+        return next;
+      });
       nativeRef.current?.focus();
     },
   }));
-  const [input, setInput] = useState("");
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     // Ctrl+C
@@ -62,6 +85,7 @@ export const TerminalInput = forwardRef<TerminalInputHandle, TerminalInputProps>
         onSendInput(input);
         onSendControl("Enter");
         setInput("");
+        saveDraft(sessionId, "");
       } else {
         onSendControl("Enter");
       }
@@ -73,7 +97,7 @@ export const TerminalInput = forwardRef<TerminalInputHandle, TerminalInputProps>
       <textarea
         ref={nativeRef}
         value={input}
-        onChange={(e) => setInput(e.target.value)}
+        onChange={(e) => { setInput(e.target.value); saveDraft(sessionId, e.target.value); }}
         onKeyDown={handleKeyDown}
         placeholder={
           disabled ? "Session ended" : "Type input... (Enter to send, Shift+Enter for newline)"
