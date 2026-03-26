@@ -5,7 +5,7 @@ tags: [idea, session, ux]
 category: idea
 pinned: false
 createdAt: 2026-03-25T12:00:00.000Z
-updatedAt: 2026-03-25T12:00:00.000Z
+updatedAt: 2026-03-26T10:00:00.000Z
 ---
 
 แสดงหลาย sessions พร้อมกันแบบ split screen
@@ -17,3 +17,5 @@ updatedAt: 2026-03-25T12:00:00.000Z
 - drag-to-resize panels
 
 ตอนนี้ดูได้ทีละ 1 session — ต้อง switch ไปมา
+
+**Status:** spec created → `.claude/specs/017-split-view/spec.md`

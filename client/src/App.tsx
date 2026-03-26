@@ -6,11 +6,13 @@ import { SessionManager } from "./components/SessionManager";
 import { UnlockModal } from "./components/UnlockModal";
 import { ToastContainer } from "./components/ToastContainer";
 import { NotificationPanel } from "./components/NotificationPanel";
-import { NotificationSettings } from "./components/NotificationSettings";
+import { SplitView } from "./components/SplitView";
+import { PanelSelector } from "./components/PanelSelector";
 import { useProjects } from "./hooks/useProjects";
 import { useSessions } from "./hooks/useSessions";
 import { useGroups } from "./hooks/useGroups";
 import { useNotifications } from "./hooks/useNotifications";
+import { useSplitView } from "./hooks/useSplitView";
 import { requestPermission } from "./services/notification";
 import type { Project, Session, NotificationEvent } from "./types";
 
@@ -35,6 +37,7 @@ export function App() {
   const [showUnlock, setShowUnlock] = useState(false);
   const [targetSessionId, setTargetSessionId] = useState<string | null>(null);
   const [showNotifBanner, setShowNotifBanner] = useState(false);
+  const split = useSplitView();
   const [showNotifPanel, setShowNotifPanel] = useState(false);
   const [showNotifSettings, setShowNotifSettings] = useState(false);
 
@@ -228,13 +231,71 @@ export function App() {
             />
           </div>
         ) : selectedProject ? (
-          <ProjectPanel
-            key={selectedProject.id}
-            project={selectedProject}
-            onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-            targetSessionId={targetSessionId}
-            onSessionActivated={() => setTargetSessionId(null)}
-          />
+          <>
+            {split.splitMode ? (
+              <SplitView
+                direction={split.direction}
+                ratio={split.ratio}
+                onRatioChange={split.setRatio}
+                leftFocused={split.focusedPanel === "left"}
+                onFocusLeft={() => split.setFocusedPanel("left")}
+                onFocusRight={() => split.setFocusedPanel("right")}
+                leftContent={
+                  <ProjectPanel
+                    key={selectedProject.id}
+                    project={selectedProject}
+                    onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+                    targetSessionId={targetSessionId}
+                    onSessionActivated={() => setTargetSessionId(null)}
+                    splitControls={{
+                      splitMode: true,
+                      direction: split.direction,
+                      onOpenSplit: split.openSplit,
+                      onCloseSplit: split.closeSplit,
+                      onToggleDirection: split.toggleDirection,
+                    }}
+                  />
+                }
+                rightContent={
+                  split.rightProject ? (
+                    <ProjectPanel
+                      key={`right-${split.rightProject.id}`}
+                      project={split.rightProject}
+                      onToggleSidebar={() => {}}
+                      splitControls={{
+                        splitMode: true,
+                        direction: split.direction,
+                        onOpenSplit: split.openSplit,
+                        onCloseSplit: split.closeSplit,
+                        onToggleDirection: split.toggleDirection,
+                        onChangeRight: () => split.setRightProject(null),
+                      }}
+                    />
+                  ) : (
+                    <PanelSelector
+                      projects={projects}
+                      onSelect={split.setRightProject}
+                    />
+                  )
+                }
+              />
+            ) : (
+              <ProjectPanel
+                key={selectedProject.id}
+                project={selectedProject}
+                onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+                targetSessionId={targetSessionId}
+                onSessionActivated={() => setTargetSessionId(null)}
+                splitControls={{
+                  splitMode: false,
+                  direction: split.direction,
+                  onOpenSplit: split.openSplit,
+                  onCloseSplit: split.closeSplit,
+                  onToggleDirection: split.toggleDirection,
+                }}
+              />
+            )}
+          </>
         ) : (
           <div className="placeholder">
             <button

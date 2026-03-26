@@ -657,9 +657,9 @@ body {
 
 .panel-header {
   display: flex;
-  justify-content: space-between;
+  flex-wrap: wrap;
   align-items: center;
-  padding: 0 16px;
+  padding: 0 8px;
   background: #11111b;
   border-bottom: 1px solid #313244;
   flex-shrink: 0;
@@ -670,16 +670,22 @@ body {
 
 .panel-tabs {
   display: flex;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
+.panel-tabs::-webkit-scrollbar { display: none; }
+
 .panel-tab {
-  padding: 10px 16px;
+  padding: 8px 10px;
   border: none;
   background: none;
   color: #6c7086;
-  font-size: 13px;
+  font-size: 12px;
   cursor: pointer;
   border-bottom: 2px solid transparent;
+  white-space: nowrap;
 }
 
 .panel-tab:hover {
@@ -693,17 +699,20 @@ body {
 
 .panel-actions {
   display: flex;
-  gap: 8px;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
 .continue-button-small {
-  padding: 6px 14px;
+  padding: 4px 10px;
   border: 1px solid #a6e3a1;
   border-radius: 4px;
   background: none;
   color: #a6e3a1;
   font-weight: 600;
-  font-size: 12px;
+  font-size: 11px;
   cursor: pointer;
 }
 
@@ -713,13 +722,13 @@ body {
 }
 
 .launch-button-small {
-  padding: 6px 14px;
+  padding: 4px 10px;
   border: none;
   border-radius: 4px;
   background: #89b4fa;
   color: #1e1e2e;
   font-weight: 600;
-  font-size: 12px;
+  font-size: 11px;
   cursor: pointer;
 }
 
@@ -747,7 +756,11 @@ body {
   background: #11111b;
   border-bottom: 1px solid #313244;
   overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
+
+.session-tabs::-webkit-scrollbar { display: none; }
 
 .session-tab {
   display: flex;
@@ -3658,6 +3671,131 @@ body {
 @media (max-width: 768px) {
   .sbs-diff { overflow-x: auto; }
   .sbs-table { min-width: 600px; }
+}
+
+/* ===== Split View ===== */
+
+.split-view {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  height: 100%;
+}
+
+.split-panel {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  position: relative;
+}
+
+.split-panel * {
+  scrollbar-width: thin;
+  scrollbar-color: #313244 transparent;
+}
+
+.split-panel *::-webkit-scrollbar { width: 4px; height: 4px; }
+.split-panel *::-webkit-scrollbar-track { background: transparent; }
+.split-panel *::-webkit-scrollbar-thumb { background: #313244; border-radius: 2px; }
+
+.split-panel.focused {
+  outline: 2px solid #89b4fa;
+  outline-offset: -2px;
+  border-radius: 2px;
+}
+
+.split-divider {
+  flex-shrink: 0;
+  background: #313244;
+  transition: background 0.15s;
+  z-index: 10;
+}
+
+.split-divider:hover,
+.split-divider:active {
+  background: #89b4fa;
+}
+
+/* Horizontal split (side-by-side) */
+.split-view[style*="row"] > .split-divider {
+  width: 4px;
+}
+
+/* Vertical split (top-bottom) */
+.split-view[style*="column"] > .split-divider {
+  height: 4px;
+}
+
+/* Split toolbar */
+.split-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.split-btn {
+  background: #313244;
+  border: none;
+  color: #a6adc8;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.split-btn:hover { background: #45475a; color: #cdd6f4; }
+
+/* Panel selector */
+.panel-selector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 12px;
+  padding: 24px;
+  color: #6c7086;
+}
+
+.panel-selector h3 {
+  font-size: 14px;
+  color: #cdd6f4;
+  margin-bottom: 4px;
+}
+
+.panel-selector select {
+  background: #313244;
+  color: #cdd6f4;
+  border: 1px solid #45475a;
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 13px;
+  width: 200px;
+}
+
+.panel-selector-open {
+  background: #89b4fa;
+  color: #1e1e2e;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.panel-selector-open:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Hide split on mobile */
+@media (max-width: 768px) {
+  .split-toolbar { display: none; }
 }
 
 /* ===== Toast Notifications ===== */

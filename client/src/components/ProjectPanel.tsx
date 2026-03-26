@@ -17,16 +17,26 @@ import { useNotes } from "../hooks/useNotes";
 import { useGitHistory } from "../hooks/useGitHistory";
 import type { Project, Session } from "../types";
 
+interface SplitControls {
+  splitMode: boolean;
+  direction: "h" | "v";
+  onOpenSplit: () => void;
+  onCloseSplit: () => void;
+  onToggleDirection: () => void;
+  onChangeRight?: () => void;
+}
+
 interface ProjectPanelProps {
   project: Project;
   onToggleSidebar: () => void;
   targetSessionId?: string | null;
   onSessionActivated?: () => void;
+  splitControls?: SplitControls;
 }
 
 type Tab = "terminal" | "files" | "changes" | "specs" | "notes";
 
-export function ProjectPanel({ project, onToggleSidebar, targetSessionId, onSessionActivated }: ProjectPanelProps) {
+export function ProjectPanel({ project, onToggleSidebar, targetSessionId, onSessionActivated, splitControls }: ProjectPanelProps) {
   const [activeTab, setActiveTab] = useState<Tab>("terminal");
   const [activeSession, setActiveSession] = useState<Session | null>(null);
   const [showToolSelector, setShowToolSelector] = useState(false);
@@ -167,6 +177,23 @@ export function ProjectPanel({ project, onToggleSidebar, targetSessionId, onSess
           <button className="launch-button-small" onClick={handleLaunch}>
             New
           </button>
+          {splitControls && (
+            <div className="split-toolbar">
+              {!splitControls.splitMode ? (
+                <button className="split-btn" onClick={splitControls.onOpenSplit}>Split</button>
+              ) : (
+                <>
+                  {splitControls.onChangeRight && (
+                    <button className="split-btn" onClick={splitControls.onChangeRight}>Change</button>
+                  )}
+                  <button className="split-btn" onClick={splitControls.onToggleDirection}>
+                    {splitControls.direction === "h" ? "Vertical" : "Horizontal"}
+                  </button>
+                  <button className="split-btn" onClick={splitControls.onCloseSplit}>Close</button>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
