@@ -5,7 +5,7 @@ import { getUnlockToken, setUnlockToken, clearUnlockToken, getAuthHeaders } from
 export function useProjects() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [unlocked, setUnlocked] = useState(false);
+  const [unlocked, setUnlocked] = useState(() => getUnlockToken() !== null);
   const [hasGlobalPassword, setHasGlobalPassword] = useState(false);
 
   const fetchProjects = useCallback(async () => {

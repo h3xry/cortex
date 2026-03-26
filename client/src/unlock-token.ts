@@ -1,20 +1,36 @@
-// Module-level token variable — lost on page refresh (by design)
-let unlockToken: string | null = null;
+const STORAGE_KEY = "cortex-unlock-token";
+
+function readToken(): string | null {
+  try {
+    return sessionStorage.getItem(STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
 
 export function getUnlockToken(): string | null {
-  return unlockToken;
+  return readToken();
 }
 
 export function setUnlockToken(token: string): void {
-  unlockToken = token;
+  try {
+    sessionStorage.setItem(STORAGE_KEY, token);
+  } catch {
+    // ignore — fallback to no persistence
+  }
 }
 
 export function clearUnlockToken(): void {
-  unlockToken = null;
+  try {
+    sessionStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // ignore
+  }
 }
 
 /** Headers to include in fetch() calls that need unlock token */
 export function getAuthHeaders(): Record<string, string> {
-  if (!unlockToken) return {};
-  return { "X-Unlock-Token": unlockToken };
+  const token = readToken();
+  if (!token) return {};
+  return { "X-Unlock-Token": token };
 }
