@@ -11,6 +11,7 @@ import { privateRouter } from "./routes/private.js";
 import { hooksRouter } from "./routes/hooks.js";
 import { noteRouter } from "./routes/notes.js";
 import { groupRouter } from "./routes/groups.js";
+import { retrosRouter } from "./routes/retros.js";
 import { handleWebSocketUpgrade } from "./ws/terminal.js";
 import { ALLOWED_ORIGINS, PORT } from "./config.js";
 import { reconnectSessions } from "./services/session-manager.js";
@@ -35,6 +36,7 @@ app.use("/api/private", privateRouter);
 app.use("/api/hooks", hooksRouter);
 app.use("/api/projects/:id/notes", noteRouter);
 app.use("/api/groups", groupRouter);
+app.use("/api", retrosRouter);
 
 handleWebSocketUpgrade(server);
 

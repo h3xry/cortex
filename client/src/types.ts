@@ -136,6 +136,26 @@ export interface Branch {
   isRemote: boolean;
 }
 
+// Retro types
+
+export interface RetroEntry {
+  projectId: string;
+  projectName: string;
+  date: string;
+  title: string;
+  order: number;
+  filename: string;
+  content: string;
+}
+
+export interface LessonEntry {
+  projectId: string;
+  projectName: string;
+  date: string;
+  filename: string;
+  content: string;
+}
+
 // Note types
 
 export type NoteCategory = "idea" | "meeting" | "requirement" | "planned" | "in-progress" | "done" | "archived";

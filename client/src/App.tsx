@@ -8,6 +8,7 @@ import { ToastContainer } from "./components/ToastContainer";
 import { NotificationPanel } from "./components/NotificationPanel";
 import { SplitView } from "./components/SplitView";
 import { PanelSelector } from "./components/PanelSelector";
+import { RetroViewer } from "./components/RetroViewer";
 import { useProjects } from "./hooks/useProjects";
 import { useSessions } from "./hooks/useSessions";
 import { useGroups } from "./hooks/useGroups";
@@ -32,7 +33,7 @@ export function App() {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const notifications = useNotifications(sessions, selectedProject?.id ?? null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [mainView, setMainView] = useState<"project" | "sessions">("project");
+  const [mainView, setMainView] = useState<"project" | "sessions" | "retros">("project");
   const [groupFilter, setGroupFilter] = useState<string | null>(null);
   const [showUnlock, setShowUnlock] = useState(false);
   const [targetSessionId, setTargetSessionId] = useState<string | null>(null);
@@ -141,6 +142,12 @@ export function App() {
               <span className="sidebar-toggle-badge">{runningCount}</span>
             )}
           </button>
+          <button
+            className={`sidebar-toggle-btn ${mainView === "retros" ? "active" : ""}`}
+            onClick={() => setMainView("retros")}
+          >
+            Retros
+          </button>
           <div style={{ marginLeft: "auto" }}>
             <button
               className="notification-bell"
@@ -230,6 +237,12 @@ export function App() {
               onRemoveSession={handleRemoveSession}
             />
           </div>
+        ) : mainView === "retros" ? (
+          <RetroViewer
+            projects={projects}
+            onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+            unlocked={unlocked}
+          />
         ) : selectedProject ? (
           <>
             {split.splitMode ? (

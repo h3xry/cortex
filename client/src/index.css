@@ -3684,6 +3684,213 @@ body {
   .sbs-table { min-width: 600px; }
 }
 
+/* ===== Retro Viewer ===== */
+
+.retro-viewer {
+  display: flex;
+  height: 100%;
+  overflow: hidden;
+}
+
+.retro-viewer-sidebar {
+  width: 320px;
+  min-width: 320px;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #313244;
+  overflow: hidden;
+}
+
+.retro-viewer-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #313244;
+  background: #11111b;
+}
+
+.retro-viewer-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #cdd6f4;
+}
+
+.retro-filter {
+  padding: 8px 12px;
+  border-bottom: 1px solid #252536;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.retro-search {
+  width: 100%;
+  background: #181825;
+  color: #cdd6f4;
+  border: 1px solid #313244;
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 12px;
+  outline: none;
+}
+
+.retro-search:focus { border-color: #89b4fa; }
+.retro-search::placeholder { color: #45475a; }
+
+.retro-filter select {
+  width: 100%;
+  background: #313244;
+  color: #cdd6f4;
+  border: 1px solid #45475a;
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 12px;
+}
+
+.retro-tabs {
+  display: flex;
+  border-bottom: 1px solid #313244;
+}
+
+.retro-tab {
+  flex: 1;
+  padding: 8px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: #6c7086;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.retro-tab:hover { color: #cdd6f4; }
+.retro-tab.active { color: #89b4fa; border-bottom-color: #89b4fa; }
+
+.retro-list {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #313244 transparent;
+}
+
+.retro-list::-webkit-scrollbar { width: 4px; }
+.retro-list::-webkit-scrollbar-thumb { background: #313244; border-radius: 2px; }
+
+.retro-list-empty {
+  padding: 24px;
+  text-align: center;
+  color: #6c7086;
+  font-size: 13px;
+}
+
+.retro-list-item {
+  padding: 10px 12px;
+  border-bottom: 1px solid #181825;
+  cursor: pointer;
+}
+
+.retro-list-item:hover { background: #252536; }
+.retro-list-item.selected { background: #313244; }
+
+.retro-list-item-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.retro-project-badge {
+  font-size: 10px;
+  font-weight: 600;
+  color: #1e1e2e;
+  padding: 1px 6px;
+  border-radius: 8px;
+}
+
+.retro-list-date {
+  font-size: 11px;
+  color: #45475a;
+}
+
+.retro-star-btn {
+  background: none;
+  border: none;
+  color: #45475a;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+}
+
+.retro-star-btn:hover { color: #f9e2af; }
+.retro-star-btn.active { color: #f9e2af; }
+
+.retro-list-title {
+  font-size: 13px;
+  color: #cdd6f4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Retro content */
+.retro-viewer-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.retro-content-header {
+  padding: 8px 12px;
+  border-bottom: 1px solid #313244;
+  display: none;
+}
+
+.retro-back-btn {
+  background: none;
+  border: none;
+  color: #89b4fa;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.retro-content-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+  scrollbar-width: thin;
+  scrollbar-color: #313244 transparent;
+}
+
+.retro-content-body::-webkit-scrollbar { width: 4px; }
+.retro-content-body::-webkit-scrollbar-thumb { background: #313244; border-radius: 2px; }
+
+.retro-content-body .wmde-markdown {
+  background: transparent !important;
+  color: #cdd6f4 !important;
+  font-size: 14px;
+}
+
+.retro-content-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #6c7086;
+  font-size: 14px;
+}
+
+/* Mobile retro */
+@media (max-width: 1024px) {
+  .retro-viewer-sidebar { width: 100%; min-width: 100%; }
+  .retro-viewer-content { display: none; }
+  .retro-viewer.mobile-show-content .retro-viewer-sidebar { display: none; }
+  .retro-viewer.mobile-show-content .retro-viewer-content { display: flex; }
+  .retro-viewer.mobile-show-content .retro-content-header { display: block; }
+}
+
 /* ===== Split View ===== */
 
 .split-view {
