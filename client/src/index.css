@@ -2511,12 +2511,25 @@ body {
 .note-new-btn:hover { background: #74c7ec; }
 
 /* Tag filter bar */
+.note-filter-section {
+  padding: 6px 12px;
+  border-bottom: 1px solid #252536;
+}
+
+.note-filter-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #45475a;
+  margin-bottom: 4px;
+}
+
 .note-category-filter {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  padding: 6px 12px;
-  border-bottom: 1px solid #313244;
 }
 
 .note-category-btn {
@@ -2566,8 +2579,7 @@ body {
 .note-tag-filter {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 12px;
+  gap: 4px;
 }
 
 .note-tag-btn {

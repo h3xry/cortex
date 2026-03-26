@@ -170,37 +170,43 @@ export function NoteList({ projectId, notesState }: NoteListProps) {
         <button className="note-new-btn" onClick={handleNewNote}>+ New</button>
       </div>
 
-      <div className="note-category-filter">
-        {CATEGORIES.map((cat) => (
-          <button
-            key={cat.value}
-            className={`note-category-btn ${categoryFilter === cat.value ? "active" : ""}`}
-            style={categoryFilter === cat.value
-              ? { background: cat.color, color: "#1e1e2e" }
-              : { borderColor: cat.color, color: cat.color }
-            }
-            onClick={() => setCategoryFilter(categoryFilter === cat.value ? null : cat.value)}
-          >
-            {cat.label}
-          </button>
-        ))}
+      <div className="note-filter-section">
+        <span className="note-filter-label">Category</span>
+        <div className="note-category-filter">
+          {CATEGORIES.map((cat) => (
+            <button
+              key={cat.value}
+              className={`note-category-btn ${categoryFilter === cat.value ? "active" : ""}`}
+              style={categoryFilter === cat.value
+                ? { background: cat.color, color: "#1e1e2e" }
+                : { borderColor: cat.color, color: cat.color }
+              }
+              onClick={() => setCategoryFilter(categoryFilter === cat.value ? null : cat.value)}
+            >
+              {cat.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {allTags.length > 0 && (
-        <div className="note-tag-filter">
-          {allTags.map((tag) => (
-            <button
-              key={tag}
-              className={`note-tag-btn ${tagFilter === tag ? "active" : ""}`}
-              style={tagFilter === tag ? getTagStyle(tag) : { borderColor: getTagStyle(tag).background, color: getTagStyle(tag).background }}
-              onClick={() => setTagFilter(tagFilter === tag ? null : tag)}
-            >
-              {tag}
-            </button>
-          ))}
-          {tagFilter && (
-            <button className="note-tag-clear" onClick={() => setTagFilter(null)}>Clear</button>
-          )}
+        <div className="note-filter-section">
+          <span className="note-filter-label">Tags</span>
+          <div className="note-tag-filter">
+            {allTags.map((tag) => (
+              <button
+                key={tag}
+                className={`note-tag-btn ${tagFilter === tag ? "active" : ""}`}
+                style={tagFilter === tag ? getTagStyle(tag) : { borderColor: getTagStyle(tag).background, color: getTagStyle(tag).background }}
+                onClick={() => setTagFilter(tagFilter === tag ? null : tag)}
+              >
+                {tag}
+              </button>
+            ))}
+            {tagFilter && (
+              <button className="note-tag-clear" onClick={() => setTagFilter(null)}>Clear</button>
+            )}
+          </div>
         </div>
       )}
 
