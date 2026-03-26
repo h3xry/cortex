@@ -99,7 +99,7 @@ noteRouter.patch("/:noteId", async (req, res) => {
     const project = await resolveProject((req.params as Params).id, req, res);
     if (!project) return;
 
-    const { title, content, tags, pinned } = req.body;
+    const { title, content, tags, category, pinned } = req.body;
 
     if (title !== undefined) {
       if (typeof title !== "string" || title.length > MAX_TITLE_LEN) {
@@ -116,7 +116,7 @@ noteRouter.patch("/:noteId", async (req, res) => {
       return;
     }
 
-    const note = await noteStore.updateNote(project.path, (req.params as Params).noteId!, { title, content, tags, pinned });
+    const note = await noteStore.updateNote(project.path, (req.params as Params).noteId!, { title, content, tags, category, pinned });
     if (!note) {
       res.status(404).json({ error: "Note not found" });
       return;

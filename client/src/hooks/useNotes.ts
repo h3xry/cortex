@@ -44,7 +44,7 @@ export function useNotes(projectId: string) {
     return note;
   }, [projectId, fetchNotes]);
 
-  const updateNote = useCallback(async (noteId: string, data: Partial<Pick<Note, "title" | "content" | "tags" | "pinned">>) => {
+  const updateNote = useCallback(async (noteId: string, data: Partial<Pick<Note, "title" | "content" | "tags" | "category" | "pinned">>) => {
     const res = await fetch(`/api/projects/${projectId}/notes/${noteId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json", ...getAuthHeaders() },
