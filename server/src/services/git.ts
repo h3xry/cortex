@@ -2,7 +2,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { access } from "node:fs/promises";
 import path from "node:path";
-import type { GitChange, GitChangeStatus, GitDiff, DiffHunk, DiffLine } from "../types.js";
+import type { GitChange, GitChangeStatus, GitDiff, DiffHunk, DiffLine, Commit, CommitFile, Branch } from "../types.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -187,4 +187,153 @@ function parseDiffHunks(diffOutput: string): DiffHunk[] {
   }
 
   return hunks;
+}
+
+// --- Git Review Functions ---
+
+const LOG_FORMAT = "%H|%h|%s|%an|%ae|%cn|%ce|%aI";
+const HASH_RE = /^[a-f0-9]{4,40}$/;
+const BRANCH_NAME_RE = /^[a-zA-Z0-9_./-]+$/;
+
+export async function getLog(projectPath: string, limit = 50, skip = 0): Promise<Commit[]> {
+  try {
+    const { stdout } = await execFileAsync(
+      "git",
+      ["log", `--format=${LOG_FORMAT}`, `-${limit}`, `--skip=${skip}`],
+      { cwd: projectPath },
+    );
+    if (!stdout.trim()) return [];
+
+    return stdout.trim().split("\n").map((line) => {
+      const [hash, shortHash, message, authorName, authorEmail, committerName, committerEmail, date] = line.split("|");
+      return { hash, shortHash, message, authorName, authorEmail, committerName, committerEmail, date };
+    });
+  } catch {
+    return [];
+  }
+}
+
+export async function getCommitFiles(projectPath: string, hash: string): Promise<CommitFile[]> {
+  if (!HASH_RE.test(hash)) throw new Error("Invalid commit hash");
+  try {
+    // Get parent for status detection
+    let parentHash: string | null = null;
+    try {
+      const { stdout: p } = await execFileAsync("git", ["rev-parse", `${hash}^`], { cwd: projectPath });
+      parentHash = p.trim();
+    } catch {
+      // No parent = first commit
+    }
+
+    // Get numstat
+    const diffArgs = parentHash
+      ? ["diff", "--numstat", parentHash, hash]
+      : ["diff-tree", "--no-commit-id", "-r", "--numstat", hash];
+
+    const { stdout } = await execFileAsync("git", diffArgs, { cwd: projectPath });
+    if (!stdout.trim()) return [];
+
+    // Get name-status for add/delete/modify detection
+    const statusArgs = parentHash
+      ? ["diff", "--name-status", parentHash, hash]
+      : ["diff-tree", "--no-commit-id", "-r", "--name-status", hash];
+
+    const { stdout: statusOut } = await execFileAsync("git", statusArgs, { cwd: projectPath });
+    const statusMap = new Map<string, GitChangeStatus>();
+    for (const line of statusOut.trim().split("\n")) {
+      if (!line) continue;
+      const [code, ...rest] = line.split("\t");
+      const filePath = rest.join("\t");
+      const s = code.charAt(0);
+      if (s === "A") statusMap.set(filePath, "added");
+      else if (s === "D") statusMap.set(filePath, "deleted");
+      else if (s === "R") statusMap.set(filePath, "renamed");
+      else statusMap.set(filePath, "modified");
+    }
+
+    const files: CommitFile[] = [];
+    for (const line of stdout.trim().split("\n")) {
+      if (!line) continue;
+      const [add, del, filePath] = line.split("\t");
+      files.push({
+        filePath,
+        status: statusMap.get(filePath) ?? "modified",
+        additions: add === "-" ? 0 : parseInt(add, 10),
+        deletions: del === "-" ? 0 : parseInt(del, 10),
+      });
+    }
+    return files;
+  } catch {
+    return [];
+  }
+}
+
+export async function getCommitDiff(projectPath: string, hash: string, filePath: string): Promise<GitDiff> {
+  if (!HASH_RE.test(hash)) throw new Error("Invalid commit hash");
+  // Path containment check
+  const resolved = path.resolve(projectPath, filePath);
+  if (!resolved.startsWith(path.resolve(projectPath) + path.sep) && resolved !== path.resolve(projectPath)) {
+    throw new Error("Path traversal detected");
+  }
+
+  try {
+    let parentHash: string | null = null;
+    try {
+      const { stdout: p } = await execFileAsync("git", ["rev-parse", `${hash}^`], { cwd: projectPath });
+      parentHash = p.trim();
+    } catch {
+      // first commit
+    }
+
+    const args = parentHash
+      ? ["diff", parentHash, hash, "--", filePath]
+      : ["diff", "--root", hash, "--", filePath];
+
+    const { stdout } = await execFileAsync("git", args, { cwd: projectPath });
+    return { filePath, hunks: parseDiffHunks(stdout) };
+  } catch {
+    return { filePath, hunks: [] };
+  }
+}
+
+export async function listBranches(projectPath: string): Promise<{ branches: Branch[]; current: string | null }> {
+  try {
+    const { stdout } = await execFileAsync(
+      "git",
+      ["branch", "-a", "--format=%(refname:short)|%(objectname:short)|%(HEAD)"],
+      { cwd: projectPath },
+    );
+    if (!stdout.trim()) return { branches: [], current: null };
+
+    let current: string | null = null;
+    const branches: Branch[] = [];
+
+    for (const line of stdout.trim().split("\n")) {
+      const [name, shortHash, head] = line.split("|");
+      if (!name || name.includes("HEAD")) continue;
+      const isCurrent = head === "*";
+      const isRemote = name.startsWith("origin/");
+      if (isCurrent) current = name;
+      branches.push({ name, shortHash, isCurrent, isRemote });
+    }
+
+    return { branches, current };
+  } catch {
+    return { branches: [], current: null };
+  }
+}
+
+export async function checkoutBranch(projectPath: string, branch: string): Promise<{ success: boolean; error?: string }> {
+  if (!BRANCH_NAME_RE.test(branch)) return { success: false, error: "Invalid branch name" };
+
+  try {
+    // Check dirty working tree
+    const { stdout: status } = await execFileAsync("git", ["status", "--porcelain"], { cwd: projectPath });
+    const isDirty = status.trim().length > 0;
+
+    await execFileAsync("git", ["checkout", branch], { cwd: projectPath });
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: (err as Error).message };
+  }
 }

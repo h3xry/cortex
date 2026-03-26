@@ -109,6 +109,33 @@ export interface GitDiff {
   hunks: DiffHunk[];
 }
 
+// Git Review types
+
+export interface Commit {
+  hash: string;
+  shortHash: string;
+  message: string;
+  authorName: string;
+  authorEmail: string;
+  committerName: string;
+  committerEmail: string;
+  date: string;
+}
+
+export interface CommitFile {
+  filePath: string;
+  status: GitChangeStatus;
+  additions: number;
+  deletions: number;
+}
+
+export interface Branch {
+  name: string;
+  shortHash: string;
+  isCurrent: boolean;
+  isRemote: boolean;
+}
+
 // Note types
 
 export interface Note {

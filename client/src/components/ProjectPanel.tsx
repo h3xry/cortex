@@ -14,6 +14,7 @@ import { useGitStatus } from "../hooks/useGitStatus";
 import { useProjectFiles } from "../hooks/useProjectFiles";
 import { useSpecs } from "../hooks/useSpecs";
 import { useNotes } from "../hooks/useNotes";
+import { useGitHistory } from "../hooks/useGitHistory";
 import type { Project, Session } from "../types";
 
 interface ProjectPanelProps {
@@ -39,6 +40,7 @@ export function ProjectPanel({ project, onToggleSidebar, targetSessionId, onSess
   const projectFiles = useProjectFiles(project.id);
   const specs = useSpecs(project.id);
   const notesState = useNotes(project.id);
+  const gitHistory = useGitHistory(project.id);
 
   // Fetch git status when switching to files or changes tab
   useEffect(() => {
@@ -280,8 +282,35 @@ export function ProjectPanel({ project, onToggleSidebar, targetSessionId, onSess
                 setMobileShowContent(true);
               }}
               onRefresh={gitStatus.fetchStatus}
+              commits={gitHistory.commits}
+              selectedCommit={gitHistory.selectedCommit}
+              commitFiles={gitHistory.commitFiles}
+              historyLoading={gitHistory.loading}
+              filesLoading={gitHistory.filesLoading}
+              hasMore={gitHistory.hasMore}
+              onSelectCommit={gitHistory.selectCommit}
+              onLoadMore={gitHistory.loadMore}
+              onSelectCommitFile={(hash, filePath) => {
+                gitHistory.fetchCommitDiff(hash, filePath);
+                setMobileShowContent(true);
+              }}
+              onClearSelection={gitHistory.clearSelection}
+              branches={gitHistory.branches}
+              currentBranch={gitHistory.currentBranch}
+              onFetchBranches={gitHistory.fetchBranches}
+              onCheckout={gitHistory.checkoutBranch}
+              onFetchLog={() => gitHistory.fetchLog(0)}
             />
-            {projectFiles.fileContent && selectedGitFile ? (
+            {gitHistory.commitDiff ? (
+              <DiffViewer
+                diff={gitHistory.commitDiff}
+                loading={gitHistory.diffLoading}
+                onClose={() => {
+                  gitHistory.clearSelection();
+                  setMobileShowContent(false);
+                }}
+              />
+            ) : projectFiles.fileContent && selectedGitFile ? (
               <FileViewer
                 path={projectFiles.fileContent.path}
                 content={projectFiles.fileContent.content}
@@ -300,7 +329,7 @@ export function ProjectPanel({ project, onToggleSidebar, targetSessionId, onSess
             ) : (
               <div className="file-viewer">
                 <div className="placeholder">
-                  Select a changed file to view
+                  Select a file to view
                 </div>
               </div>
             )}
