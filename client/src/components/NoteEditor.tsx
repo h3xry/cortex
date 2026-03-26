@@ -1,14 +1,24 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import MDEditor from "@uiw/react-md-editor";
-import type { Note } from "../types";
+import type { Note, NoteCategory } from "../types";
+
+const CATEGORIES: { value: NoteCategory; label: string; color: string }[] = [
+  { value: "idea", label: "Idea", color: "#89b4fa" },
+  { value: "meeting", label: "Meeting", color: "#cba6f7" },
+  { value: "requirement", label: "Requirement", color: "#94e2d5" },
+  { value: "planned", label: "Planned", color: "#f9e2af" },
+  { value: "in-progress", label: "In Progress", color: "#fab387" },
+  { value: "done", label: "Done", color: "#a6e3a1" },
+  { value: "archived", label: "Archived", color: "#6c7086" },
+];
 
 interface NoteEditorProps {
   projectId: string;
   noteId?: string;
   fetchNote?: (noteId: string) => Promise<Note | null>;
-  onSave: (data: { title?: string; content?: string; tags?: string[] }) => Promise<void>;
+  onSave: (data: { title?: string; content?: string; tags?: string[]; category?: NoteCategory }) => Promise<void>;
   onCancel: () => void;
-  onAutoSave?: (data: { title?: string; content?: string; tags?: string[] }) => Promise<void>;
+  onAutoSave?: (data: { title?: string; content?: string; tags?: string[]; category?: NoteCategory }) => Promise<void>;
   allTags?: string[];
 }
 
@@ -16,6 +26,7 @@ export function NoteEditor({ noteId, fetchNote, onSave, onCancel, onAutoSave, al
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [tags, setTags] = useState<string[]>([]);
+  const [category, setCategory] = useState<NoteCategory>("idea");
   const [tagInput, setTagInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -32,6 +43,7 @@ export function NoteEditor({ noteId, fetchNote, onSave, onCancel, onAutoSave, al
         setTitle(note.title === "Untitled" ? "" : note.title);
         setContent(note.content);
         setTags(note.tags);
+        setCategory(note.category ?? "idea");
       }
       setLoading(false);
     });
@@ -44,7 +56,7 @@ export function NoteEditor({ noteId, fetchNote, onSave, onCancel, onAutoSave, al
     autoSaveTimer.current = setTimeout(async () => {
       setSaving(true);
       try {
-        await onAutoSave({ title: title.trim() || undefined, content, tags });
+        await onAutoSave({ title: title.trim() || undefined, content, tags, category });
       } catch {
         // silent
       }
@@ -113,7 +125,7 @@ export function NoteEditor({ noteId, fetchNote, onSave, onCancel, onAutoSave, al
 
   const handleSave = async () => {
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
-    await onSave({ title: title.trim() || undefined, content, tags });
+    await onSave({ title: title.trim() || undefined, content, tags, category });
   };
 
   if (loading) return <div className="note-editor"><div className="note-loading">Loading...</div></div>;
@@ -135,6 +147,22 @@ export function NoteEditor({ noteId, fetchNote, onSave, onCancel, onAutoSave, al
         placeholder="Note title..."
         autoFocus
       />
+
+      <div className="note-category-selector">
+        {CATEGORIES.map((cat) => (
+          <button
+            key={cat.value}
+            className={`note-category-opt ${category === cat.value ? "active" : ""}`}
+            style={category === cat.value
+              ? { background: cat.color, color: "#1e1e2e" }
+              : { borderColor: cat.color, color: cat.color }
+            }
+            onClick={() => { setCategory(cat.value); hasChanges.current = true; scheduleAutoSave(); }}
+          >
+            {cat.label}
+          </button>
+        ))}
+      </div>
 
       <div className="note-tags-editor">
         {tags.map((tag) => (

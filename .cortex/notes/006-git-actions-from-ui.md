@@ -2,6 +2,7 @@
 id: 006
 title: Git Actions from UI
 tags: [idea, git, workflow]
+category: done
 pinned: false
 createdAt: 2026-03-25T12:00:00.000Z
 updatedAt: 2026-03-26T08:00:00.000Z

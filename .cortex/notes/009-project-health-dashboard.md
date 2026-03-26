@@ -2,6 +2,7 @@
 id: 009
 title: Project Health Dashboard
 tags: [idea, analytics, project]
+category: idea
 pinned: false
 createdAt: 2026-03-25T12:00:00.000Z
 updatedAt: 2026-03-25T12:00:00.000Z

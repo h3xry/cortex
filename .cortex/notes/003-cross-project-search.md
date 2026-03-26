@@ -2,6 +2,7 @@
 id: 003
 title: Cross-Project Search
 tags: [idea, search, notes]
+category: idea
 pinned: false
 createdAt: 2026-03-25T12:00:00.000Z
 updatedAt: 2026-03-25T12:00:00.000Z

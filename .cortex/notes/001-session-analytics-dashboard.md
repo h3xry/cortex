@@ -2,6 +2,7 @@
 id: 001
 title: Session Analytics Dashboard
 tags: [idea, analytics, session]
+category: idea
 pinned: false
 createdAt: 2026-03-25T12:00:00.000Z
 updatedAt: 2026-03-25T12:00:00.000Z

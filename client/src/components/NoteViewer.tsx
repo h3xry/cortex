@@ -48,7 +48,7 @@ export function NoteViewer({ noteId, fetchNote, onEdit, onBack, onDelete }: Note
       )}
 
       <div className="note-viewer-meta">
-        #{note.id} | Created: {new Date(note.createdAt).toLocaleString()} | Updated: {new Date(note.updatedAt).toLocaleString()}
+        #{note.id} | {note.category ?? "idea"} | Created: {new Date(note.createdAt).toLocaleString()} | Updated: {new Date(note.updatedAt).toLocaleString()}
       </div>
 
       <div className="note-viewer-content">

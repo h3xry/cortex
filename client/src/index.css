@@ -2511,6 +2511,58 @@ body {
 .note-new-btn:hover { background: #74c7ec; }
 
 /* Tag filter bar */
+.note-category-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 6px 12px;
+  border-bottom: 1px solid #313244;
+}
+
+.note-category-btn {
+  padding: 2px 8px;
+  border: 1px solid;
+  border-radius: 10px;
+  background: transparent;
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.note-category-btn.active {
+  font-weight: 600;
+}
+
+.note-category-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 6px 12px;
+}
+
+.note-category-opt {
+  padding: 2px 8px;
+  border: 1px solid;
+  border-radius: 10px;
+  background: transparent;
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.note-category-opt.active {
+  font-weight: 600;
+}
+
+.note-card-category {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+
 .note-tag-filter {
   display: flex;
   flex-wrap: wrap;

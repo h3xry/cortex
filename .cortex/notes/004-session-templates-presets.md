@@ -2,6 +2,7 @@
 id: 004
 title: Session Templates & Presets
 tags: [idea, session, productivity]
+category: idea
 pinned: false
 createdAt: 2026-03-25T12:00:00.000Z
 updatedAt: 2026-03-25T12:00:00.000Z

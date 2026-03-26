@@ -1,6 +1,8 @@
 import { readFile, writeFile, mkdir, readdir, unlink, rename } from "node:fs/promises";
 import path from "node:path";
-import type { Note, NoteMeta } from "../types.js";
+import type { Note, NoteMeta, NoteCategory } from "../types.js";
+
+const VALID_CATEGORIES: Set<string> = new Set(["idea", "meeting", "requirement", "planned", "in-progress", "done", "archived"]);
 
 const NOTES_FOLDER = ".cortex/notes";
 const ID_RE = /^[a-zA-Z0-9]{1,64}$/;
@@ -88,6 +90,7 @@ function serializeFrontmatter(note: Note): string {
     `id: ${note.id}`,
     `title: ${note.title}`,
     `tags: ${tags}`,
+    `category: ${note.category}`,
     `pinned: ${note.pinned}`,
     `createdAt: ${note.createdAt}`,
     `updatedAt: ${note.updatedAt}`,
@@ -118,6 +121,7 @@ function noteToMeta(note: Note): NoteMeta {
     id: note.id,
     title: note.title,
     tags: note.tags,
+    category: note.category,
     pinned: note.pinned,
     snippet: makeSnippet(note.content),
     createdAt: note.createdAt,
@@ -133,10 +137,13 @@ function extractId(filename: string): string {
 
 function parseNoteFile(content: string): Omit<Note, "id"> {
   const { meta, body } = parseFrontmatter(content);
+  const rawCategory = (meta.category as string) ?? "idea";
+  const category = VALID_CATEGORIES.has(rawCategory) ? (rawCategory as NoteCategory) : "idea";
   return {
     title: (meta.title as string) ?? "Untitled",
     content: body,
     tags: Array.isArray(meta.tags) ? meta.tags.map(String) : [],
+    category,
     pinned: meta.pinned === true,
     createdAt: (meta.createdAt as string) ?? new Date().toISOString(),
     updatedAt: (meta.updatedAt as string) ?? new Date().toISOString(),
@@ -211,15 +218,17 @@ async function nextId(projectPath: string): Promise<string> {
 
 export async function createNote(
   projectPath: string,
-  data: { title?: string; content?: string; tags?: string[] },
+  data: { title?: string; content?: string; tags?: string[]; category?: NoteCategory },
 ): Promise<Note> {
   await ensureDir(projectPath);
   const now = new Date().toISOString();
+  const category = data.category && VALID_CATEGORIES.has(data.category) ? data.category : "idea";
   const note: Note = {
     id: await nextId(projectPath),
     title: data.title?.trim() || "Untitled",
     content: data.content ?? "",
     tags: [...new Set((data.tags ?? []).map((t) => t.trim()).filter(Boolean))],
+    category,
     pinned: false,
     createdAt: now,
     updatedAt: now,
@@ -232,7 +241,7 @@ export async function createNote(
 export async function updateNote(
   projectPath: string,
   noteId: string,
-  data: Partial<Pick<Note, "title" | "content" | "tags" | "pinned">>,
+  data: Partial<Pick<Note, "title" | "content" | "tags" | "category" | "pinned">>,
 ): Promise<Note | null> {
   noteIdValidate(noteId);
   const oldPath = await findFile(projectPath, noteId);
@@ -245,6 +254,7 @@ export async function updateNote(
   if (data.title !== undefined) note.title = data.title.trim() || "Untitled";
   if (data.content !== undefined) note.content = data.content;
   if (data.tags !== undefined) note.tags = [...new Set(data.tags.map((t) => t.trim()).filter(Boolean))];
+  if (data.category !== undefined && VALID_CATEGORIES.has(data.category)) note.category = data.category;
   if (data.pinned !== undefined) note.pinned = data.pinned;
   note.updatedAt = new Date().toISOString();
 

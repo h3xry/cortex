@@ -2,6 +2,7 @@
 id: 005
 title: Notification & Alert System
 tags: [idea, notification, session]
+category: done
 pinned: false
 createdAt: 2026-03-25T12:00:00.000Z
 updatedAt: 2026-03-25T13:00:00.000Z

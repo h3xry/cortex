@@ -1,7 +1,17 @@
 import { useState, useMemo } from "react";
 import { NoteEditor } from "./NoteEditor";
 import { NoteViewer } from "./NoteViewer";
-import type { NoteMeta } from "../types";
+import type { NoteMeta, NoteCategory } from "../types";
+
+const CATEGORIES: { value: NoteCategory; label: string; color: string }[] = [
+  { value: "idea", label: "Idea", color: "#89b4fa" },
+  { value: "meeting", label: "Meeting", color: "#cba6f7" },
+  { value: "requirement", label: "Requirement", color: "#94e2d5" },
+  { value: "planned", label: "Planned", color: "#f9e2af" },
+  { value: "in-progress", label: "In Progress", color: "#fab387" },
+  { value: "done", label: "Done", color: "#a6e3a1" },
+  { value: "archived", label: "Archived", color: "#6c7086" },
+];
 
 const TAG_COLORS: Record<string, { bg: string; fg: string }> = {
   bug:      { bg: "#f38ba8", fg: "#1e1e2e" },
@@ -37,6 +47,7 @@ export function NoteList({ projectId, notesState }: NoteListProps) {
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [tagFilter, setTagFilter] = useState<string | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState<NoteCategory | null>(null);
 
   // Default tags + collected from notes
   const allTags = useMemo(() => {
@@ -49,6 +60,9 @@ export function NoteList({ projectId, notesState }: NoteListProps) {
   // Filter notes
   const filtered = useMemo(() => {
     let result = notes;
+    if (categoryFilter) {
+      result = result.filter((n) => n.category === categoryFilter);
+    }
     if (tagFilter) {
       result = result.filter((n) => n.tags.includes(tagFilter));
     }
@@ -59,7 +73,7 @@ export function NoteList({ projectId, notesState }: NoteListProps) {
       );
     }
     return result;
-  }, [notes, tagFilter, search]);
+  }, [notes, categoryFilter, tagFilter, search]);
 
   const handleOpenNote = (noteId: string) => {
     setActiveNoteId(noteId);
@@ -156,6 +170,22 @@ export function NoteList({ projectId, notesState }: NoteListProps) {
         <button className="note-new-btn" onClick={handleNewNote}>+ New</button>
       </div>
 
+      <div className="note-category-filter">
+        {CATEGORIES.map((cat) => (
+          <button
+            key={cat.value}
+            className={`note-category-btn ${categoryFilter === cat.value ? "active" : ""}`}
+            style={categoryFilter === cat.value
+              ? { background: cat.color, color: "#1e1e2e" }
+              : { borderColor: cat.color, color: cat.color }
+            }
+            onClick={() => setCategoryFilter(categoryFilter === cat.value ? null : cat.value)}
+          >
+            {cat.label}
+          </button>
+        ))}
+      </div>
+
       {allTags.length > 0 && (
         <div className="note-tag-filter">
           {allTags.map((tag) => (
@@ -178,8 +208,8 @@ export function NoteList({ projectId, notesState }: NoteListProps) {
 
       {!loading && filtered.length === 0 && (
         <div className="note-empty">
-          {search || tagFilter ? (
-            <>No notes found. <button className="note-clear-btn" onClick={() => { setSearch(""); setTagFilter(null); }}>Clear filters</button></>
+          {search || tagFilter || categoryFilter ? (
+            <>No notes found. <button className="note-clear-btn" onClick={() => { setSearch(""); setTagFilter(null); setCategoryFilter(null); }}>Clear filters</button></>
           ) : (
             <>No notes yet. Click "+ New" to create one.</>
           )}
@@ -197,6 +227,12 @@ export function NoteList({ projectId, notesState }: NoteListProps) {
               {note.pinned ? "📌" : "📍"}
             </button>
             <span className="note-card-id">#{note.id}</span>
+            <span
+              className="note-card-category"
+              style={{ color: CATEGORIES.find((c) => c.value === note.category)?.color ?? "#6c7086" }}
+            >
+              {CATEGORIES.find((c) => c.value === note.category)?.label ?? note.category}
+            </span>
             <span className="note-card-title">{note.title}</span>
             <button
               className="note-delete-btn"

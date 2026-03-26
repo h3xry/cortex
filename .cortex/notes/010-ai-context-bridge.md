@@ -2,6 +2,7 @@
 id: 010
 title: AI Context Bridge
 tags: [idea, ai, integration]
+category: idea
 pinned: true
 createdAt: 2026-03-25T12:00:00.000Z
 updatedAt: 2026-03-25T12:00:00.000Z

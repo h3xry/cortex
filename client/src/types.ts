@@ -138,11 +138,14 @@ export interface Branch {
 
 // Note types
 
+export type NoteCategory = "idea" | "meeting" | "requirement" | "planned" | "in-progress" | "done" | "archived";
+
 export interface Note {
   id: string;
   title: string;
   content: string;
   tags: string[];
+  category: NoteCategory;
   pinned: boolean;
   createdAt: string;
   updatedAt: string;
@@ -152,6 +155,7 @@ export interface NoteMeta {
   id: string;
   title: string;
   tags: string[];
+  category: NoteCategory;
   pinned: boolean;
   snippet: string;
   createdAt: string;

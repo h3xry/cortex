@@ -2,6 +2,7 @@
 id: 008
 title: Multi-Session Split View
 tags: [idea, session, ux]
+category: idea
 pinned: false
 createdAt: 2026-03-25T12:00:00.000Z
 updatedAt: 2026-03-25T12:00:00.000Z
