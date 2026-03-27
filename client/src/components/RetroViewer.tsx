@@ -1,6 +1,16 @@
 import { useEffect, useState, useMemo } from "react";
 import MDEditor from "@uiw/react-md-editor";
 import rehypeRaw from "rehype-raw";
+import { MermaidBlock } from "./MermaidBlock";
+
+const codeRenderer = {
+  code: ({ children, className, ...props }: any) => {
+    if (/language-mermaid/.exec(className || "")) {
+      return <MermaidBlock code={String(children).replace(/\n$/, "")} />;
+    }
+    return <code className={className} {...props}>{children}</code>;
+  },
+};
 import { RetroList } from "./RetroList";
 import { useRetros } from "../hooks/useRetros";
 import type { Project } from "../types";
@@ -147,7 +157,7 @@ export function RetroViewer({ projects, onToggleSidebar, unlocked }: RetroViewer
               </button>
             </div>
             <div className="retro-content-body">
-              <MDEditor.Markdown source={selectedContent} rehypePlugins={[rehypeRaw]} />
+              <MDEditor.Markdown source={selectedContent} rehypePlugins={[rehypeRaw]} components={codeRenderer} />
             </div>
           </>
         ) : (

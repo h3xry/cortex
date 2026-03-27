@@ -3695,6 +3695,40 @@ body {
   .sbs-table { min-width: 600px; }
 }
 
+/* ===== Mermaid ===== */
+
+.mermaid-container {
+  margin: 12px 0;
+  overflow-x: auto;
+}
+
+.mermaid-container svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.mermaid-error {
+  margin: 12px 0;
+  border: 1px solid #f38ba8;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.mermaid-error pre {
+  padding: 10px;
+  background: #181825;
+  color: #6c7086;
+  font-size: 12px;
+  margin: 0;
+}
+
+.mermaid-error-msg {
+  padding: 6px 10px;
+  background: rgba(243, 139, 168, 0.1);
+  color: #f38ba8;
+  font-size: 11px;
+}
+
 /* ===== Retro Viewer ===== */
 
 .retro-viewer {

@@ -3,6 +3,17 @@ import MDEditor from "@uiw/react-md-editor";
 import rehypeRaw from "rehype-raw";
 import type { Note } from "../types";
 import { getTagStyle } from "./NoteList";
+import { MermaidBlock } from "./MermaidBlock";
+
+const codeRenderer = {
+  code: ({ children, className, ...props }: any) => {
+    const match = /language-mermaid/.exec(className || "");
+    if (match) {
+      return <MermaidBlock code={String(children).replace(/\n$/, "")} />;
+    }
+    return <code className={className} {...props}>{children}</code>;
+  },
+};
 
 interface NoteViewerProps {
   noteId: string;
@@ -52,7 +63,7 @@ export function NoteViewer({ noteId, fetchNote, onEdit, onBack, onDelete }: Note
       </div>
 
       <div className="note-viewer-content">
-        <MDEditor.Markdown source={note.content} rehypePlugins={[rehypeRaw]} />
+        <MDEditor.Markdown source={note.content} rehypePlugins={[rehypeRaw]} components={codeRenderer} />
       </div>
     </div>
   );
