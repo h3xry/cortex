@@ -65,6 +65,7 @@ export const TerminalInput = forwardRef<TerminalInputHandle, TerminalInputProps>
 
   // --- Voice Input (Web Speech API) ---
   const recognitionRef = useRef<SpeechRecognitionType | null>(null);
+  const baseTextRef = useRef("");
   const [listening, setListening] = useState(false);
 
   const hasSpeechAPI = typeof window !== "undefined" && ("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
@@ -78,31 +79,26 @@ export const TerminalInput = forwardRef<TerminalInputHandle, TerminalInputProps>
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) return;
 
+    // Save current text as base — voice appends after this
+    baseTextRef.current = input;
+
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.lang = ""; // auto-detect
-
-    let finalTranscript = "";
+    recognition.lang = "";
 
     recognition.onresult = (event: any) => {
-      let interim = "";
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript;
-        if (event.results[i].isFinal) {
-          finalTranscript += transcript;
-        } else {
-          interim = transcript;
-        }
+      // Rebuild full transcript from all results
+      let full = "";
+      for (let i = 0; i < event.results.length; i++) {
+        full += event.results[i][0].transcript;
       }
-      const voiceText = finalTranscript + interim;
-      setInput((prev) => {
-        // Append voice text after existing text
-        const base = prev.replace(/\n?🎤.*$/, ""); // remove previous interim
-        const next = base + (base && !base.endsWith("\n") && voiceText ? " " : "") + voiceText;
-        saveDraft(sessionId, next);
-        return next;
-      });
+
+      const base = baseTextRef.current;
+      const separator = base && !base.endsWith(" ") && !base.endsWith("\n") && full ? " " : "";
+      const next = base + separator + full;
+      setInput(next);
+      saveDraft(sessionId, next);
     };
 
     recognition.onend = () => {
@@ -118,7 +114,7 @@ export const TerminalInput = forwardRef<TerminalInputHandle, TerminalInputProps>
     recognitionRef.current = recognition;
     recognition.start();
     setListening(true);
-  }, [listening, sessionId]);
+  }, [listening, sessionId, input]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     // Ctrl+C
