@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useId } from "react";
 import mermaid from "mermaid";
 
 mermaid.initialize({
@@ -16,31 +16,41 @@ mermaid.initialize({
   },
 });
 
-let idCounter = 0;
-
 interface MermaidBlockProps {
   code: string;
 }
 
 export function MermaidBlock({ code }: MermaidBlockProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [svg, setSvg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const idRef = useRef(`mermaid-${++idCounter}`);
+  const reactId = useId();
+  const renderCount = useRef(0);
 
   useEffect(() => {
-    if (!containerRef.current || !code.trim()) return;
+    if (!code.trim()) return;
 
     setError(null);
-    const id = idRef.current;
+    setSvg(null);
+    renderCount.current++;
+    const currentRender = renderCount.current;
 
-    mermaid.render(id, code.trim()).then(({ svg }) => {
-      if (containerRef.current) {
-        containerRef.current.innerHTML = svg;
+    // Unique id per render to avoid DOM id collisions
+    const id = `mmd-${reactId.replace(/:/g, "")}-${currentRender}`;
+
+    // Clean up any leftover temp elements from previous failed renders
+    document.querySelectorAll(`[id^="dmmd-"]`).forEach((el) => el.remove());
+
+    mermaid.render(id, code.trim()).then(({ svg: rendered }) => {
+      if (currentRender === renderCount.current) {
+        setSvg(rendered);
       }
     }).catch((err) => {
-      setError(err?.message || "Failed to render diagram");
+      if (currentRender === renderCount.current) {
+        setError(err?.message || "Failed to render diagram");
+      }
     });
-  }, [code]);
+  }, [code, reactId]);
 
   if (error) {
     return (
@@ -51,5 +61,9 @@ export function MermaidBlock({ code }: MermaidBlockProps) {
     );
   }
 
-  return <div ref={containerRef} className="mermaid-container" />;
+  if (svg) {
+    return <div className="mermaid-container" dangerouslySetInnerHTML={{ __html: svg }} />;
+  }
+
+  return <div ref={containerRef} className="mermaid-container">Loading diagram...</div>;
 }
