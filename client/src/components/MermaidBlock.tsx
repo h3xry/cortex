@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useId } from "react";
+import { useEffect, useState, useId } from "react";
 import mermaid from "mermaid";
 
 mermaid.initialize({
@@ -16,40 +16,47 @@ mermaid.initialize({
   },
 });
 
+// Serialize mermaid.render() — it's not safe to call concurrently
+let renderQueue: Promise<void> = Promise.resolve();
+
+function renderMermaid(id: string, code: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    renderQueue = renderQueue.then(async () => {
+      try {
+        // Clean up any leftover temp elements
+        document.getElementById("d" + id)?.remove();
+        const { svg } = await mermaid.render(id, code);
+        resolve(svg);
+      } catch (err) {
+        reject(err);
+      }
+    });
+  });
+}
+
 interface MermaidBlockProps {
   code: string;
 }
 
 export function MermaidBlock({ code }: MermaidBlockProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
   const [svg, setSvg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const reactId = useId();
-  const renderCount = useRef(0);
+  const reactId = useId().replace(/:/g, "");
 
   useEffect(() => {
     if (!code.trim()) return;
 
-    setError(null);
+    let cancelled = false;
     setSvg(null);
-    renderCount.current++;
-    const currentRender = renderCount.current;
+    setError(null);
 
-    // Unique id per render to avoid DOM id collisions
-    const id = `mmd-${reactId.replace(/:/g, "")}-${currentRender}`;
+    const id = `mmd${reactId}${Date.now()}`;
 
-    // Clean up any leftover temp elements from previous failed renders
-    document.querySelectorAll(`[id^="dmmd-"]`).forEach((el) => el.remove());
+    renderMermaid(id, code.trim())
+      .then((rendered) => { if (!cancelled) setSvg(rendered); })
+      .catch((err) => { if (!cancelled) setError(err?.message || "Failed to render"); });
 
-    mermaid.render(id, code.trim()).then(({ svg: rendered }) => {
-      if (currentRender === renderCount.current) {
-        setSvg(rendered);
-      }
-    }).catch((err) => {
-      if (currentRender === renderCount.current) {
-        setError(err?.message || "Failed to render diagram");
-      }
-    });
+    return () => { cancelled = true; };
   }, [code, reactId]);
 
   if (error) {
@@ -65,5 +72,5 @@ export function MermaidBlock({ code }: MermaidBlockProps) {
     return <div className="mermaid-container" dangerouslySetInnerHTML={{ __html: svg }} />;
   }
 
-  return <div ref={containerRef} className="mermaid-container">Loading diagram...</div>;
+  return <div className="mermaid-container" style={{ padding: 12, color: "#6c7086", fontSize: 13 }}>Loading diagram...</div>;
 }
