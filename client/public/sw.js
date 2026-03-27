@@ -1,11 +1,11 @@
-const CACHE_NAME = "cc-monitor-v1";
+const CACHE_NAME = "cortex-v1";
 
-// Install — cache app shell
+// Install — cache app shell, do NOT skipWaiting to prevent mid-session reload
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(["/", "/index.html"]))
   );
-  self.skipWaiting();
+  // Skip skipWaiting() — let user control when to activate new SW
 });
 
 // Activate — clean old caches
@@ -15,12 +15,11 @@ self.addEventListener("activate", (event) => {
       Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
     )
   );
-  self.clients.claim();
+  // Skip clients.claim() — don't take over existing pages mid-session
 });
 
 // Fetch — network first, fallback to cache
 self.addEventListener("fetch", (event) => {
-  // Skip non-GET and API/WS requests
   if (event.request.method !== "GET") return;
   const url = new URL(event.request.url);
   if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/stream/")) return;
@@ -28,7 +27,6 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        // Cache successful responses
         if (response.ok) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));

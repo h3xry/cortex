@@ -78,8 +78,24 @@ export function useSessions() {
 
   useEffect(() => {
     refreshSessions();
-    const interval = setInterval(refreshSessions, 3000);
-    return () => clearInterval(interval);
+    let interval = setInterval(refreshSessions, 3000);
+
+    // Pause polling when tab is hidden (screen lock / tab switch)
+    // Resume with fresh interval when visible again
+    const handleVisibility = () => {
+      if (document.hidden) {
+        clearInterval(interval);
+      } else {
+        refreshSessions(); // single fetch on resume
+        interval = setInterval(refreshSessions, 3000);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, [refreshSessions]);
 
   return { sessions, error, createSession, deleteSession, refreshSessions };
