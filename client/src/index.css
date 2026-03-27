@@ -1609,6 +1609,18 @@ body {
   cursor: not-allowed;
 }
 
+.terminal-key-button.voice-active {
+  background: #f38ba8;
+  color: #1e1e2e;
+  border-color: #f38ba8;
+  animation: voice-pulse 1s infinite;
+}
+
+@keyframes voice-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
 .terminal-ctrl-c-button {
   padding: 8px 12px;
   border: 1px solid #f38ba8;

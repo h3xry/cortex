@@ -1,4 +1,7 @@
-import { useState, useRef, useImperativeHandle, forwardRef, type KeyboardEvent } from "react";
+import { useState, useRef, useCallback, useImperativeHandle, forwardRef, type KeyboardEvent } from "react";
+
+// Web Speech API types (not in all TS libs)
+type SpeechRecognitionType = any;
 
 export interface TerminalInputHandle {
   focus: () => void;
@@ -60,6 +63,63 @@ export const TerminalInput = forwardRef<TerminalInputHandle, TerminalInputProps>
     },
   }));
 
+  // --- Voice Input (Web Speech API) ---
+  const recognitionRef = useRef<SpeechRecognitionType | null>(null);
+  const [listening, setListening] = useState(false);
+
+  const hasSpeechAPI = typeof window !== "undefined" && ("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
+
+  const toggleVoice = useCallback(() => {
+    if (listening && recognitionRef.current) {
+      recognitionRef.current.stop();
+      return;
+    }
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = ""; // auto-detect
+
+    let finalTranscript = "";
+
+    recognition.onresult = (event: any) => {
+      let interim = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalTranscript += transcript;
+        } else {
+          interim = transcript;
+        }
+      }
+      const voiceText = finalTranscript + interim;
+      setInput((prev) => {
+        // Append voice text after existing text
+        const base = prev.replace(/\n?🎤.*$/, ""); // remove previous interim
+        const next = base + (base && !base.endsWith("\n") && voiceText ? " " : "") + voiceText;
+        saveDraft(sessionId, next);
+        return next;
+      });
+    };
+
+    recognition.onend = () => {
+      setListening(false);
+      recognitionRef.current = null;
+    };
+
+    recognition.onerror = () => {
+      setListening(false);
+      recognitionRef.current = null;
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+    setListening(true);
+  }, [listening, sessionId]);
+
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     // Ctrl+C
     if (e.ctrlKey && e.key === "c") {
@@ -108,6 +168,16 @@ export const TerminalInput = forwardRef<TerminalInputHandle, TerminalInputProps>
         rows={2}
       />
       <div className="terminal-input-buttons">
+        {hasSpeechAPI && (
+          <button
+            className={`terminal-key-button ${listening ? "voice-active" : ""}`}
+            onClick={toggleVoice}
+            disabled={disabled}
+            title={listening ? "Stop recording" : "Voice input"}
+          >
+            {listening ? "⏹" : "🎤"}
+          </button>
+        )}
         <button
           className="terminal-key-button"
           onClick={() => onSendControl("Up")}
