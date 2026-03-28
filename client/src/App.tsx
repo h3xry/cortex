@@ -4,7 +4,6 @@ import { ProjectList } from "./components/ProjectList";
 import { ProjectPanel } from "./components/ProjectPanel";
 import { SessionManager } from "./components/SessionManager";
 import { UnlockModal } from "./components/UnlockModal";
-import { ToastContainer } from "./components/ToastContainer";
 import { NotificationPanel } from "./components/NotificationPanel";
 import { SplitView } from "./components/SplitView";
 import { PanelSelector } from "./components/PanelSelector";
@@ -329,11 +328,6 @@ export function App() {
         />
       )}
 
-      <ToastContainer
-        toasts={notifications.toasts}
-        onDismiss={notifications.dismissToast}
-        onNavigate={handleNotifNavigate}
-      />
 
       {showNotifBanner && (
         <div className="notification-banner" style={{ position: "fixed", bottom: 16, left: 16, right: 16, zIndex: 9998 }}>
