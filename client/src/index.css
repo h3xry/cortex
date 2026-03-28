@@ -2478,13 +2478,21 @@ body {
     bottom: 0;
     z-index: 50;
     flex-shrink: 0;
-    flex-wrap: nowrap;
+    flex-direction: column;
+    gap: 6px;
     background: #11111b;
     border-top: 1px solid #313244;
     padding: 8px;
   }
 
+  .terminal-input .terminal-input-buttons {
+    flex-wrap: wrap;
+    gap: 4px;
+    justify-content: flex-start;
+  }
+
   .terminal-input-field {
+    width: 100%;
     min-width: 0;
     font-size: 16px; /* prevent iOS zoom on focus */
   }
