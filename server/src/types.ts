@@ -1,10 +1,12 @@
 export type SessionStatus = "starting" | "running" | "ended";
+export type SessionType = "claude" | "shell";
 
 export interface Session {
   id: string;
   tmuxSessionName: string;
   folderPath: string;
   status: SessionStatus;
+  sessionType: SessionType;
   allowedTools: string[];
   createdAt: string;
   endedAt: string | null;

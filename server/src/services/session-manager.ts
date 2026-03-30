@@ -109,6 +109,7 @@ export async function createSession(
   folderPath: string,
   allowedTools: string[] = [],
   continueConversation = false,
+  sessionType: import("../types.js").SessionType = "claude",
 ): Promise<Session> {
   const activeSessions = Array.from(sessions.values()).filter(
     (e) => e.session.status !== "ended",
@@ -126,7 +127,8 @@ export async function createSession(
     tmuxSessionName,
     folderPath: resolvedPath,
     status: "starting",
-    allowedTools,
+    sessionType,
+    allowedTools: sessionType === "shell" ? [] : allowedTools,
     createdAt: new Date().toISOString(),
     endedAt: null,
   };
@@ -149,17 +151,24 @@ export async function createSession(
     const logFile = tmux.getPipeFilePath(tmuxSessionName);
     await writeFile(logFile, "");
 
-    let command = "claude --dangerously-skip-permissions";
-    if (continueConversation) {
-      command += " --continue";
-    }
-    if (allowedTools.length > 0) {
-      // Validate each tool name to prevent command injection via sh -c
-      const toolNamePattern = /^[a-zA-Z0-9_:.-]+$/;
-      const sanitized = allowedTools.filter((t) => toolNamePattern.test(t));
-      if (sanitized.length > 0) {
-        const toolsArg = sanitized.join(",");
-        command += ` --allowedTools "${toolsArg}"`;
+    let command: string;
+
+    if (sessionType === "shell") {
+      // Plain shell — use user's default shell or bash
+      command = process.env.SHELL || "bash";
+    } else {
+      // Claude Code session
+      command = "claude --dangerously-skip-permissions";
+      if (continueConversation) {
+        command += " --continue";
+      }
+      if (allowedTools.length > 0) {
+        const toolNamePattern = /^[a-zA-Z0-9_:.-]+$/;
+        const sanitized = allowedTools.filter((t) => toolNamePattern.test(t));
+        if (sanitized.length > 0) {
+          const toolsArg = sanitized.join(",");
+          command += ` --allowedTools "${toolsArg}"`;
+        }
       }
     }
 
@@ -171,14 +180,16 @@ export async function createSession(
     // Wait for pipe-pane to start writing before tailing
     await waitForPipePane(logFile);
 
-    // Auto-accept the workspace trust dialog after a short delay
-    setTimeout(async () => {
-      try {
-        await tmux.sendKeys(tmuxSessionName, "Enter");
-      } catch {
-        // Session may have ended already
-      }
-    }, 2000);
+    // Auto-accept the workspace trust dialog (Claude Code only)
+    if (sessionType === "claude") {
+      setTimeout(async () => {
+        try {
+          await tmux.sendKeys(tmuxSessionName, "Enter");
+        } catch {
+          // Session may have ended already
+        }
+      }, 2000);
+    }
 
     session.status = "running";
     startOutputStream(entry);

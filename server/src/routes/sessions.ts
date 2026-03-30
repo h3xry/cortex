@@ -13,7 +13,7 @@ import * as groupStore from "../services/group-store.js";
 export const sessionsRouter = Router();
 
 sessionsRouter.post("/", async (req, res) => {
-  const { folderPath, projectId, allowedTools, continueConversation } = req.body;
+  const { folderPath, projectId, allowedTools, continueConversation, sessionType } = req.body;
 
   let resolvedPath: string | undefined = folderPath;
 
@@ -53,10 +53,12 @@ sessionsRouter.post("/", async (req, res) => {
     : [];
 
   try {
+    const validType = sessionType === "shell" ? "shell" as const : "claude" as const;
     const session = await sessionManager.createSession(
       resolvedPath,
       tools,
       !!continueConversation,
+      validType,
     );
     res.status(201).json({
       id: session.id,

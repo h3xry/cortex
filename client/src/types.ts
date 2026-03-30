@@ -1,4 +1,5 @@
 export type SessionStatus = "starting" | "running" | "ended";
+export type SessionType = "claude" | "shell";
 
 export type ActivityStatus = "unknown" | "idle" | "thinking" | "working" | "done" | "help" | "error";
 
@@ -13,6 +14,7 @@ export interface Session {
   id: string;
   folderPath: string;
   status: SessionStatus;
+  sessionType: SessionType;
   allowedTools: string[];
   createdAt: string;
   endedAt: string | null;

@@ -126,6 +126,19 @@ export function ProjectPanel({ project, onToggleSidebar, targetSessionId, onSess
     }
   };
 
+  const handleShell = async () => {
+    setLaunching(true);
+    try {
+      const session = await createSession(project.path, undefined, false, "shell");
+      setActiveSession(session);
+      setActiveTab("terminal");
+    } catch (err) {
+      console.error("Shell launch failed:", err);
+    } finally {
+      setLaunching(false);
+    }
+  };
+
   const handleSelectSession = (session: Session) => {
     setActiveSession(session);
     setActiveTab("terminal");
@@ -176,6 +189,9 @@ export function ProjectPanel({ project, onToggleSidebar, targetSessionId, onSess
           </button>
           <button className="launch-button-small" onClick={handleLaunch}>
             New
+          </button>
+          <button className="shell-button-small" onClick={handleShell} disabled={launching}>
+            Shell
           </button>
           {splitControls && (
             <div className="split-toolbar">

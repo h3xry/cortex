@@ -31,10 +31,12 @@ export function useSessions() {
       folderPath: string,
       allowedTools?: string[],
       continueConversation?: boolean,
+      sessionType?: "claude" | "shell",
     ): Promise<Session> => {
       const body: Record<string, unknown> = { folderPath };
       if (allowedTools) body.allowedTools = allowedTools;
       if (continueConversation) body.continueConversation = true;
+      if (sessionType) body.sessionType = sessionType;
 
       const res = await fetch("/api/sessions", {
         method: "POST",

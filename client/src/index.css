@@ -743,6 +743,27 @@ body {
   background: #74c7ec;
 }
 
+.shell-button-small {
+  padding: 4px 10px;
+  border: 1px solid #a6e3a1;
+  border-radius: 4px;
+  background: none;
+  color: #a6e3a1;
+  font-weight: 600;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.shell-button-small:hover {
+  background: #a6e3a1;
+  color: #1e1e2e;
+}
+
+.shell-button-small:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .panel-content {
   flex: 1;
   overflow: hidden;
