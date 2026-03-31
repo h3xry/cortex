@@ -13,6 +13,7 @@ import { useSessions } from "./hooks/useSessions";
 import { useGroups } from "./hooks/useGroups";
 import { useNotifications } from "./hooks/useNotifications";
 import { useSplitView } from "./hooks/useSplitView";
+import { useTheme } from "./hooks/useTheme";
 import { requestPermission } from "./services/notification";
 import type { Project, Session, NotificationEvent } from "./types";
 
@@ -38,6 +39,7 @@ export function App() {
   const [targetSessionId, setTargetSessionId] = useState<string | null>(null);
   const [showNotifBanner, setShowNotifBanner] = useState(false);
   const split = useSplitView();
+  const { theme, toggle: toggleTheme } = useTheme();
   const [showNotifPanel, setShowNotifPanel] = useState(false);
   const [showNotifSettings, setShowNotifSettings] = useState(false);
 
@@ -147,7 +149,14 @@ export function App() {
           >
             Retros
           </button>
-          <div style={{ marginLeft: "auto" }}>
+          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center" }}>
+            <button
+              className="theme-toggle-btn"
+              onClick={toggleTheme}
+              title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {theme === "dark" ? "☀️" : "🌙"}
+            </button>
             <button
               className="notification-bell"
               onClick={() => { setShowNotifPanel(!showNotifPanel); if (!showNotifPanel) notifications.markAllRead(); }}
