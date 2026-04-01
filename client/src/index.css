@@ -3518,6 +3518,25 @@ body {
   overflow-y: auto;
 }
 
+.commit-search {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.commit-search-input {
+  width: 100%;
+  background: var(--bg-surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 5px 8px;
+  font-size: 12px;
+  outline: none;
+}
+
+.commit-search-input:focus { border-color: var(--accent); }
+.commit-search-input::placeholder { color: var(--text-faint); }
+
 .commit-list-empty {
   padding: 24px;
   text-align: center;

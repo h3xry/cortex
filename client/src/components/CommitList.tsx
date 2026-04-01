@@ -1,3 +1,4 @@
+import { useState, useMemo } from "react";
 import type { Commit } from "../types";
 
 interface CommitListProps {
@@ -22,6 +23,19 @@ function timeAgo(dateStr: string): string {
 }
 
 export function CommitList({ commits, selectedHash, loading, hasMore, onSelect, onLoadMore }: CommitListProps) {
+  const [search, setSearch] = useState("");
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return commits;
+    const q = search.toLowerCase();
+    return commits.filter((c) =>
+      c.message.toLowerCase().includes(q) ||
+      c.authorName.toLowerCase().includes(q) ||
+      c.shortHash.toLowerCase().includes(q) ||
+      c.hash.toLowerCase().includes(q)
+    );
+  }, [commits, search]);
+
   if (loading && commits.length === 0) {
     return <div className="commit-list"><div className="commit-list-empty">Loading...</div></div>;
   }
@@ -32,21 +46,34 @@ export function CommitList({ commits, selectedHash, loading, hasMore, onSelect, 
 
   return (
     <div className="commit-list">
-      {commits.map((c) => (
-        <div
-          key={c.hash}
-          className={`commit-item ${selectedHash === c.hash ? "selected" : ""}`}
-          onClick={() => onSelect(c)}
-        >
-          <div className="commit-item-top">
-            <span className="commit-hash">{c.shortHash}</span>
-            <span className="commit-date">{timeAgo(c.date)}</span>
+      <div className="commit-search">
+        <input
+          type="text"
+          placeholder="Search commits..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="commit-search-input"
+        />
+      </div>
+      {filtered.length === 0 ? (
+        <div className="commit-list-empty">No commits match "{search}"</div>
+      ) : (
+        filtered.map((c) => (
+          <div
+            key={c.hash}
+            className={`commit-item ${selectedHash === c.hash ? "selected" : ""}`}
+            onClick={() => onSelect(c)}
+          >
+            <div className="commit-item-top">
+              <span className="commit-hash">{c.shortHash}</span>
+              <span className="commit-date">{timeAgo(c.date)}</span>
+            </div>
+            <div className="commit-message">{c.message}</div>
+            <div className="commit-author">{c.authorName}</div>
           </div>
-          <div className="commit-message">{c.message}</div>
-          <div className="commit-author">{c.authorName}</div>
-        </div>
-      ))}
-      {hasMore && (
+        ))
+      )}
+      {hasMore && !search && (
         <button className="commit-load-more" onClick={onLoadMore} disabled={loading}>
           {loading ? "Loading..." : "Load more"}
         </button>
