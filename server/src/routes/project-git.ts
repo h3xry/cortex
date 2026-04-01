@@ -51,8 +51,9 @@ projectGitRouter.get("/log", async (req, res) => {
 
   const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
   const skip = parseInt(req.query.skip as string) || 0;
+  const search = (req.query.search as string) || undefined;
 
-  const commits = await git.getLog(project.path, limit, skip);
+  const commits = await git.getLog(project.path, limit, skip, search);
   res.json({ commits });
 });
 

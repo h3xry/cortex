@@ -343,6 +343,7 @@ export function ProjectPanel({ project, onToggleSidebar, targetSessionId, onSess
               onFetchBranches={gitHistory.fetchBranches}
               onCheckout={gitHistory.checkoutBranch}
               onFetchLog={() => gitHistory.fetchLog(0)}
+              onSearchCommits={(q) => gitHistory.fetchLog(0, q)}
             />
             {gitHistory.commitDiff ? (
               <DiffViewer

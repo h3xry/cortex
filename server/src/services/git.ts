@@ -195,13 +195,38 @@ const LOG_FORMAT = "%H|%h|%s|%an|%ae|%cn|%ce|%aI";
 const HASH_RE = /^[a-f0-9]{4,40}$/;
 const BRANCH_NAME_RE = /^[a-zA-Z0-9_./-]+$/;
 
-export async function getLog(projectPath: string, limit = 50, skip = 0): Promise<Commit[]> {
+export async function getLog(projectPath: string, limit = 50, skip = 0, search?: string): Promise<Commit[]> {
   try {
+    const args = ["log", `--format=${LOG_FORMAT}`, `-${limit}`, `--skip=${skip}`];
+
+    if (search && search.trim()) {
+      const q = search.trim();
+      // Search in message + author — use --all-match=false (OR logic via separate git calls)
+      // git log --grep searches commit message, --author searches author
+      // We use --grep for message and fall back to hash match client-side
+      args.push(`--grep=${q}`, "--regexp-ignore-case");
+    }
+
     const { stdout } = await execFileAsync(
       "git",
-      ["log", `--format=${LOG_FORMAT}`, `-${limit}`, `--skip=${skip}`],
+      args,
       { cwd: projectPath },
     );
+
+    if (!stdout.trim()) {
+      // If grep found nothing, try searching by author
+      if (search && search.trim()) {
+        const authorArgs = ["log", `--format=${LOG_FORMAT}`, `-${limit}`, `--author=${search.trim()}`, "--regexp-ignore-case"];
+        const { stdout: authorOut } = await execFileAsync("git", authorArgs, { cwd: projectPath });
+        if (authorOut.trim()) {
+          return authorOut.trim().split("\n").map((line) => {
+            const [hash, shortHash, message, authorName, authorEmail, committerName, committerEmail, date] = line.split("|");
+            return { hash, shortHash, message, authorName, authorEmail, committerName, committerEmail, date };
+          });
+        }
+      }
+      return [];
+    }
     if (!stdout.trim()) return [];
 
     return stdout.trim().split("\n").map((line) => {

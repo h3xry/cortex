@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useRef } from "react";
 import type { Commit } from "../types";
 
 interface CommitListProps {
@@ -8,6 +8,7 @@ interface CommitListProps {
   hasMore: boolean;
   onSelect: (commit: Commit) => void;
   onLoadMore: () => void;
+  onSearch: (query: string) => void;
 }
 
 function timeAgo(dateStr: string): string {
@@ -22,26 +23,27 @@ function timeAgo(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString();
 }
 
-export function CommitList({ commits, selectedHash, loading, hasMore, onSelect, onLoadMore }: CommitListProps) {
+export function CommitList({ commits, selectedHash, loading, hasMore, onSelect, onLoadMore, onSearch }: CommitListProps) {
   const [search, setSearch] = useState("");
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const filtered = useMemo(() => {
-    if (!search.trim()) return commits;
-    const q = search.toLowerCase();
-    return commits.filter((c) =>
-      c.message.toLowerCase().includes(q) ||
-      c.authorName.toLowerCase().includes(q) ||
-      c.shortHash.toLowerCase().includes(q) ||
-      c.hash.toLowerCase().includes(q)
-    );
-  }, [commits, search]);
+  const handleSearch = (value: string) => {
+    setSearch(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      onSearch(value);
+    }, 300);
+  };
 
   if (loading && commits.length === 0) {
-    return <div className="commit-list"><div className="commit-list-empty">Loading...</div></div>;
-  }
-
-  if (commits.length === 0) {
-    return <div className="commit-list"><div className="commit-list-empty">No commits yet</div></div>;
+    return (
+      <div className="commit-list">
+        <div className="commit-search">
+          <input type="text" placeholder="Search all commits..." value={search} onChange={(e) => handleSearch(e.target.value)} className="commit-search-input" />
+        </div>
+        <div className="commit-list-empty">Loading...</div>
+      </div>
+    );
   }
 
   return (
@@ -49,16 +51,16 @@ export function CommitList({ commits, selectedHash, loading, hasMore, onSelect, 
       <div className="commit-search">
         <input
           type="text"
-          placeholder="Search commits..."
+          placeholder="Search all commits..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => handleSearch(e.target.value)}
           className="commit-search-input"
         />
       </div>
-      {filtered.length === 0 ? (
-        <div className="commit-list-empty">No commits match "{search}"</div>
+      {commits.length === 0 ? (
+        <div className="commit-list-empty">{search ? `No commits match "${search}"` : "No commits yet"}</div>
       ) : (
-        filtered.map((c) => (
+        commits.map((c) => (
           <div
             key={c.hash}
             className={`commit-item ${selectedHash === c.hash ? "selected" : ""}`}

@@ -31,6 +31,7 @@ interface GitChangesProps {
   onFetchBranches: () => void;
   onCheckout: (branch: string) => Promise<{ success: boolean; error?: string }>;
   onFetchLog: () => void;
+  onSearchCommits: (query: string) => void;
 }
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
@@ -44,7 +45,7 @@ export function GitChanges({
   changes, branch, loading, isGitRepo, selectedFile, onSelectFile, onRefresh,
   commits, selectedCommit, commitFiles, historyLoading, filesLoading, hasMore,
   onSelectCommit, onLoadMore, onSelectCommitFile, onClearSelection,
-  branches, currentBranch, onFetchBranches, onCheckout, onFetchLog,
+  branches, currentBranch, onFetchBranches, onCheckout, onFetchLog, onSearchCommits,
 }: GitChangesProps) {
   const [viewMode, setViewMode] = useState<ViewMode>("working");
   const [commitSelectedFile, setCommitSelectedFile] = useState<string | null>(null);
@@ -147,6 +148,7 @@ export function GitChanges({
           hasMore={hasMore}
           onSelect={onSelectCommit}
           onLoadMore={onLoadMore}
+          onSearch={onSearchCommits}
         />
       )}
     </div>

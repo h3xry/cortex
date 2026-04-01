@@ -13,11 +13,13 @@ export function useGitHistory(projectId: string | null) {
   const [diffLoading, setDiffLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
 
-  const fetchLog = useCallback(async (skip = 0) => {
+  const fetchLog = useCallback(async (skip = 0, search?: string) => {
     if (!projectId) return;
     setLoading(true);
     try {
-      const res = await fetch(`/api/projects/${projectId}/git/log?limit=50&skip=${skip}`);
+      const params = new URLSearchParams({ limit: "50", skip: String(skip) });
+      if (search) params.set("search", search);
+      const res = await fetch(`/api/projects/${projectId}/git/log?${params}`);
       if (!res.ok) return;
       const data = await res.json();
       if (skip === 0) {
